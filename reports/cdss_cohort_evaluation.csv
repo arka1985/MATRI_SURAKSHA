@@ -1,0 +1,58 @@
+Study_ID,Facility,Age,Gestational_Age,Hemoglobin,BP,Actual_Referred,CDSS_Triage_Level,CDSS_Color,CDSS_Refer_Recommended,CDSS_Risk_Score,CDSS_Urgency,CDSS_Triggers,Triggers_Count
+1,Harirampur RH,15,38.0,10.8,106.0/64.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [YELLOW] Adolescent Pregnancy (<= 18 years),2
+2,Harirampur RH,21,38.0,11.2,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+3,Harirampur RH,18,36.0,9.8,110.0/70.0,0,YELLOW,#F57C00,1,45.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [YELLOW] Adolescent Pregnancy (<= 18 years),3
+4,Harirampur RH,23,41.0,10.0,110.0/90.0,1,RED,#D32F2F,1,100.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Gestational Hypertension / Mild Pre-eclampsia | [YELLOW] Post-term Pregnancy (>= 41 Weeks) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [RED] Clinically Diagnosed Eclampsia / Pre-eclampsia | [RED] Obstetric Hemorrhage (APH / PPH),5
+5,Balihara PHC,20,36.0,10.7,120.0/70.0,1,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+6,Balihara PHC,30,38.0,10.2,100.0/60.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [YELLOW] History of Prior Pregnancy Complications,2
+7,Balihara PHC,16,37.0,14.9,110.0/70.0,1,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [YELLOW] Adolescent Pregnancy (<= 18 years),2
+8,Balihara PHC,32,40.0,9.1,120.0/80.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,2
+9,Balihara PHC,20,45.0,8.1,120.0/80.0,1,RED,#D32F2F,1,70.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Post-term Pregnancy (>= 41 Weeks) | [RED] Clinically Diagnosed Eclampsia / Pre-eclampsia,3
+10,Balihara PHC,19,38.0,10.0,100.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+11,Balihara PHC,20,38.0,10.8,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+12,Balihara PHC,23,40.0,8.0,100.0/80.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+13,Balihara PHC,16,42.0,11.2,100.0/60.0,1,YELLOW,#F57C00,1,45.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Post-term Pregnancy (>= 41 Weeks) | [YELLOW] Adolescent Pregnancy (<= 18 years) | [YELLOW] History of Prior Pregnancy Complications,3
+14,Balihara PHC,24,42.0,9.2,110.0/80.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Post-term Pregnancy (>= 41 Weeks),2
+15,Balihara PHC,20,43.0,11.2,130.0/80.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Post-term Pregnancy (>= 41 Weeks),1
+16,Rashidpur RH,19,34.0,10.0,120.0/72.0,0,RED,#D32F2F,1,40.0,Immediate Emergency (within 30-45 minutes),[RED] Preterm Labor (< 36 Weeks),1
+17,Rashidpur RH,21,37.0,10.6,124.0/74.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+18,Rashidpur RH,20,38.0,9.4,110.0/70.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,2
+19,Rashidpur RH,20,38.0,11.7,138.0/84.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+20,Rashidpur RH,17,38.0,11.0,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Adolescent Pregnancy (<= 18 years),1
+21,Rashidpur RH,29,39.0,11.0,110.0/70.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+22,Rashidpur RH,34,39.0,8.0,120.0/80.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,2
+23,Rashidpur RH,20,34.0,9.0,112.0/70.0,0,RED,#D32F2F,1,55.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [RED] Preterm Labor (< 36 Weeks),2
+24,Rashidpur RH,19,38.0,10.0,110.0/80.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+25,Rashidpur RH,27,37.0,9.0,100.0/60.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,2
+26,Rashidpur RH,28,38.0,10.0,110.0/70.0,1,RED,#D32F2F,1,55.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [RED] Obstetric Hemorrhage (APH / PPH),2
+27,Rashidpur RH,22,40.0,11.0,112.0/72.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+28,Rashidpur RH,28,38.0,10.0,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+29,Rashidpur RH,22,38.0,10.0,140.0/80.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Gestational Hypertension / Mild Pre-eclampsia,1
+30,Rashidpur RH,20,39.0,9.0,110.0/70.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] History of Prior Pregnancy Complications,2
+31,Rashidpur RH,19,35.0,9.0,117.0/80.0,0,RED,#D32F2F,1,70.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [RED] Preterm Labor (< 36 Weeks) | [YELLOW] History of Prior Pregnancy Complications,3
+32,Rashidpur RH,20,38.0,10.5,120.0/82.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+33,Rashidpur RH,24,37.0,9.7,112.0/72.0,0,YELLOW,#F57C00,1,30.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,2
+34,Rashidpur RH,29,37.0,10.8,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+35,Rashidpur RH,15,40.0,9.3,126.0/90.0,0,YELLOW,#F57C00,1,60.0,Urgent Senior MO Review & Planned Transfer,[YELLOW] Gestational Hypertension / Mild Pre-eclampsia | [YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL) | [YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling | [YELLOW] Adolescent Pregnancy (<= 18 years),4
+36,Tapan RH,20,38.0,10.0,100.0/60.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+37,Tapan RH,20,39.0,11.3,90.0/60.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+38,Tapan RH,19,39.0,11.0,120.0/78.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+39,Tapan RH,29,37.0,,106.0/72.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] History of Prior Pregnancy Complications,1
+40,Tapan RH,31,39.0,8.9,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+41,Tapan RH,22,36.0,10.0,130.0/70.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+42,Tapan RH,34,40.0,10.6,110.0/70.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+43,Tapan RH,19,41.0,11.4,120.0/80.0,1,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Post-term Pregnancy (>= 41 Weeks),1
+44,Tapan RH,22,37.0,9.8,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+45,Tapan RH,17,39.0,12.1,120.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Adolescent Pregnancy (<= 18 years),1
+46,Tapan RH,24,37.0,10.8,130.0/80.0,1,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Rupture of Membranes / Amniotic Fluid Dribbling,1
+47,Tapan RH,19,38.0,9.0,100.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+48,Tapan RH,21,39.0,13.9,108.0/70.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+49,Tapan RH,27,37.0,10.5,100.0/60.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+50,Tapan RH,17,37.0,10.0,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Adolescent Pregnancy (<= 18 years),1
+51,Tapan RH,19,38.0,11.0,140.0/80.0,1,RED,#D32F2F,1,55.0,Immediate Emergency (within 30-45 minutes),[YELLOW] Gestational Hypertension / Mild Pre-eclampsia | [RED] Clinically Diagnosed Eclampsia / Pre-eclampsia,2
+52,Tapan RH,26,40.0,10.7,139.0/84.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+53,Tapan RH,19,37.0,9.6,110.0/70.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+54,Tapan RH,25,40.0,9.0,110.0/72.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Moderate Maternal Anemia (7.0 - 9.9 g/dL),1
+55,Tapan RH,18,40.0,11.1,130.0/80.0,0,YELLOW,#FBC02D,0,15.0,Close Vigilance at PLHCU,[YELLOW] Adolescent Pregnancy (<= 18 years),1
+56,Tapan RH,19,37.0,10.8,116.0/70.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0
+57,Tapan RH,26,40.0,11.3,120.0/82.0,0,GREEN,#388E3C,0,0.0,Routine Care,None,0

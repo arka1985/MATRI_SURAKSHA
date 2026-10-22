@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="wbMapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#0369a1" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.05" />
+    </linearGradient>
+
+    <linearGradient id="mapStrokeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+
+    <linearGradient id="motherArtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="50%" stop-color="#e11d48" />
+      <stop offset="100%" stop-color="#fb7185" />
+    </linearGradient>
+
+    <linearGradient id="goldAura" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="pulseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- ============================================================= -->
+  <!-- LEFT EMBLEM: WEST BENGAL OUTLINE MAP + MOTHER & INFANT -->
+  <!-- ============================================================= -->
+  <g transform="translate(15, 8)">
+    <!-- Outer Protective Aura Ring -->
+    <circle cx="85" cy="92" r="82" fill="none" stroke="#e0f2fe" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
+    <circle cx="85" cy="92" r="76" fill="url(#goldAura)" />
+
+    <!-- Stylized West Bengal Geographic Boundary Silhouette -->
+    <!-- Scaled and centered to fit harmoniously within the emblem -->
+    <path d="
+      M 98,16
+      C 94,15 88,18 85,24
+      C 84,28 86,34 85,38
+      C 82,42 75,44 74,48
+      C 73,53 79,56 81,60
+      C 83,63 81,68 80,72
+      C 78,75 74,78 75,83
+      C 72,85 64,86 58,90
+      C 52,93 46,98 42,105
+      C 38,112 40,119 43,124
+      C 48,131 56,134 62,139
+      C 67,143 72,150 78,154
+      C 84,157 91,155 97,152
+      C 102,149 105,155 109,158
+      C 113,161 118,158 122,154
+      C 126,149 123,142 124,136
+      C 125,129 128,124 126,117
+      C 124,109 119,103 118,95
+      C 117,88 119,82 118,75
+      C 117,68 112,63 110,57
+      C 109,51 113,46 116,41
+      C 119,36 126,35 132,32
+      C 137,29 141,25 142,20
+      C 142,16 136,17 131,18
+      C 124,19 117,16 112,18
+      C 107,19 102,16 98,16 Z
+    " fill="url(#wbMapGrad)" stroke="url(#mapStrokeGrad)" stroke-width="2.2" stroke-linejoin="round" />
+
+    <!-- Dakshin Dinajpur AI Epicenter Pulse Dot (District Focus) -->
+    <g transform="translate(82, 66)">
+      <circle cx="0" cy="0" r="4.5" fill="#f43f5e" filter="url(#softGlow)" />
+      <circle cx="0" cy="0" r="9" fill="none" stroke="#f43f5e" stroke-width="1.2" opacity="0.6">
+        <animate attributeName="r" values="4;12;4" dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.8;0;0.8" dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Tender One-Line Art: Mother Cradling & Gazing at Newborn Baby -->
+    <!-- Positioned within Bengal Heartlands -->
+    <g transform="translate(56, 76) scale(0.68)">
+      <!-- Mother's Hair & Veil Flow -->
+      <path d="M42,12 C52,4 66,7 76,14 C86,21 94,33 97,45 C98,52 95,60 91,65 C87,70 82,74 81,81 C80,88 84,95 83,102 C82,108 77,112 71,114 C63,117 54,115 46,112"
+            fill="none" stroke="#e11d48" stroke-width="2.6" stroke-linecap="round" />
+
+      <!-- Mother's Gentle Forehead, Nose, Lips & Chin Silhouette -->
+      <path d="M43,18 C36,25 35,35 34,44 C33,48 37,51 39,54 C40,56 38,58 37,60 C36,62 38,65 41,66 C44,67 47,69 49,72 C52,77 48,84 45,88"
+            fill="none" stroke="#be123c" stroke-width="2.4" stroke-linecap="round" />
+
+      <!-- Mother's Embracing Arm & Hands Cradling the Infant -->
+      <path d="M45,88 C38,89 28,94 22,100 C15,108 16,118 22,125 C29,132 40,136 50,136 C62,136 74,130 81,121 C86,115 88,107 86,99 C84,89 77,80 70,74"
+            fill="none" stroke="#e11d48" stroke-width="2.6" stroke-linecap="round" />
+
+      <!-- Newborn Infant Head, Gentle Profile & Cradled Body -->
+      <path d="M22,98 C18,93 21,83 27,80 C32,77 38,80 40,86 C41,89 44,89 46,87 C48,85 50,88 50,91 C50,95 46,98 44,102 C41,107 43,113 42,118 C40,123 34,126 29,124"
+            fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" />
+
+      <!-- Infant's Tiny Hand Reaching Toward Mother -->
+      <path d="M40,94 C43,92 46,94 45,98"
+            fill="none" stroke="#fb7185" stroke-width="2" stroke-linecap="round" />
+    </g>
+
+    <!-- Medical ECG Pulse Lifeline Across the Lower Boundary -->
+    <path d="M28,142 L52,142 L57,133 L62,152 L67,137 L72,145 L76,142 L142,142"
+          fill="none" stroke="url(#pulseGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- ============================================================= -->
+  <!-- RIGHT TYPOGRAPHY & IDENTITY -->
+  <!-- ============================================================= -->
+  <g transform="translate(195, 34)">
+    <!-- Primary Latin Wordmark -->
+    <text x="0" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Montserrat', sans-serif" font-size="52" font-weight="800" fill="#0f172a" letter-spacing="-1">
+      Matri<tspan fill="#f43f5e">Suraksha</tspan>
+    </text>
+
+    <!-- Bengali Indigenous Typography -->
+    <text x="360" y="52" font-family="'Hind Siliguri', 'Akaash', 'Mukti', sans-serif" font-size="44" font-weight="700" fill="#0284c7">
+      মাতৃসুরক্ষা
+    </text>
+
+    <!-- Divider Bar with Gradient -->
+    <rect x="0" y="68" width="530" height="3" rx="1.5" fill="url(#pulseGrad)" />
+
+    <!-- Subtitle: Clinical Role & Jurisdiction -->
+    <text x="0" y="94" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#334155" letter-spacing="1.2">
+      AI CLINICAL DECISION SUPPORT SYSTEM (CDSS)
+    </text>
+
+    <!-- Institutional Endorsement -->
+    <text x="0" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500" fill="#64748b">
+      Department of Health &amp; Family Welfare, Govt. of West Bengal &bull; Dakshin Dinajpur
+    </text>
+  </g>
+</svg>

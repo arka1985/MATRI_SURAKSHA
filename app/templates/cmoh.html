@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Module 3: Chief Medical Officer of Health (CMOH) District Dashboard - MatriSuraksha{% endblock %}
+
+{% block content %}
+<div class="cdss-title-header cmoh-header">
+    <div class="cdss-title-left">
+        <div class="cdss-badge-pill badge-blue-light">
+            <i class="fa-solid fa-chart-line"></i> District Surveillance &bull; Module 3
+        </div>
+        <h2>Chief Medical Officer of Health (CMOH) District Dashboard</h2>
+        <p>Dakshin Dinajpur Maternal &amp; Perinatal Health Intelligence &amp; Referral Quality Surveillance</p>
+    </div>
+    <div class="cdss-title-right">
+        <a href="/api/export/csv" class="btn btn-outline" title="Export complete district maternal registry to CSV">
+            <i class="fa-solid fa-download"></i> Export Data (CSV)
+        </a>
+        <button type="button" class="btn btn-primary" onclick="window.print();" title="Print District Quality Report">
+            <i class="fa-solid fa-print"></i> Generate Report
+        </button>
+    </div>
+</div>
+
+<!-- District Macro KPI Cards (6 Equal Columns Grid) -->
+<div class="cmoh-kpi-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fa-solid fa-hospital-user"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">{{ analytics.kpi.total_admissions }}</div>
+            <div class="stat-lbl">District Admissions</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fa-solid fa-ambulance"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">
+                {{ analytics.kpi.total_referrals }}
+                <span class="stat-rate">({{ analytics.kpi.referral_rate }}%)</span>
+            </div>
+            <div class="stat-lbl">Referral Volume</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">{{ analytics.kpi.red_count }}</div>
+            <div class="stat-lbl">RED Crises</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow"><i class="fa-solid fa-person-breastfeeding"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">{{ analytics.kpi.anemia_rate }}%</div>
+            <div class="stat-lbl">Anemia (&lt;11 g/dL)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow"><i class="fa-solid fa-child"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">{{ analytics.kpi.teenage_rate }}%</div>
+            <div class="stat-lbl">Teenage (&le;19y)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-comments"></i></div>
+        <div class="stat-info">
+            <div class="stat-val">{{ analytics.kpi.feedbacks_count }}</div>
+            <div class="stat-lbl">Audited Feedbacks</div>
+        </div>
+    </div>
+</div>
+
+<!-- Symmetrical Charts Section (2 Equal Columns) -->
+<div class="cmoh-charts-grid">
+    <div class="panel chart-panel">
+        <div class="panel-header">
+            <div class="panel-header-left">
+                <h3><i class="fa-solid fa-chart-pie"></i> CDSS Risk Stratification Burden</h3>
+                <span class="panel-header-sub">Dakshin Dinajpur District Case Distribution</span>
+            </div>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="triageChart"></canvas>
+        </div>
+    </div>
+
+    <div class="panel chart-panel">
+        <div class="panel-header">
+            <div class="panel-header-left">
+                <h3><i class="fa-solid fa-clipboard-check"></i> Receiving Hospital Referral Quality Assessment</h3>
+                <span class="panel-header-sub">Specialist Obstetrician Audit of Feeder PHC Referrals</span>
+            </div>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="feedbackChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Facilities Surveillance Matrix -->
+<div class="panel">
+    <div class="panel-header">
+        <div class="panel-header-left">
+            <h3><i class="fa-solid fa-sitemap"></i> Primary Health Facility (PLHCU) Performance Matrix</h3>
+            <span class="panel-header-sub">Continuous Quality Surveillance Across Dakshin Dinajpur Feeder Units</span>
+        </div>
+        <div class="search-input-wrap matrix-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="matrix-search" placeholder="Filter facilities..." oninput="filterFacilityMatrix();">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table" id="matrix-table">
+            <thead>
+                <tr>
+                    <th>Facility Name</th>
+                    <th>Admissions</th>
+                    <th>Referrals Out</th>
+                    <th>Referral Rate</th>
+                    <th>RED Crises</th>
+                    <th>Avg Hb (g/dL)</th>
+                    <th>Avg Age</th>
+                    <th>Vulnerability Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if analytics.facilities|length == 0 %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2.5rem; color: #64748b;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
+                        <strong>District Baseline 0: Awaiting Facility Intake Registrations</strong>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.82rem;">Admit patients in Primary Unit (PLHCU) to initiate real-time institutional surveillance.</p>
+                    </td>
+                </tr>
+                {% else %}
+                {% for fac in analytics.facilities %}
+                <tr>
+                    <td>
+                        <div class="matrix-facility-name"><i class="fa-solid fa-hospital text-primary-blue"></i> {{ fac.facility_name }}</div>
+                    </td>
+                    <td><strong>{{ fac.total_admissions }}</strong></td>
+                    <td><strong>{{ fac.referrals }}</strong></td>
+                    <td>
+                        <span class="rate-pill {% if (fac.referrals/fac.total_admissions) > 0.25 %}rate-high{% else %}rate-normal{% endif %}">
+                            {{ "%.1f"|format((fac.referrals / fac.total_admissions) * 100) }}%
+                        </span>
+                    </td>
+                    <td><span class="triage-badge red">{{ fac.red_cases }}</span></td>
+                    <td>
+                        <strong class="{% if fac.avg_hb < 10.0 %}text-red{% else %}text-green{% endif %}">
+                            {{ fac.avg_hb }}
+                        </strong>
+                    </td>
+                    <td>{{ fac.avg_age }} yrs</td>
+                    <td>
+                        {% if fac.avg_hb < 10.0 or fac.avg_age < 20.0 %}
+                            <span class="triage-badge red"><i class="fa-solid fa-triangle-exclamation"></i> High Vulnerability</span>
+                        {% elif (fac.referrals/fac.total_admissions) > 0.2 %}
+                            <span class="triage-badge yellow"><i class="fa-solid fa-eye"></i> Moderate Strain</span>
+                        {% else %}
+                            <span class="triage-badge green"><i class="fa-solid fa-circle-check"></i> Stable Capacity</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Triage Chart (True 0 Baseline)
+    const ctxTriage = document.getElementById('triageChart').getContext('2d');
+    const greenCount = {{ analytics.kpi.green_count }};
+    const yellowCount = {{ analytics.kpi.yellow_count }};
+    const redCount = {{ analytics.kpi.red_count }};
+    const totalTriage = greenCount + yellowCount + redCount;
+
+    new Chart(ctxTriage, {
+        type: 'doughnut',
+        data: {
+            labels: totalTriage > 0 ? ['GREEN (Routine PLHCU)', 'YELLOW (Senior MO Vigilance)', 'RED (Immediate Referral)'] : ['Awaiting Patient Admissions (0 Baseline)'],
+            datasets: [{
+                data: totalTriage > 0 ? [greenCount, yellowCount, redCount] : [1],
+                backgroundColor: totalTriage > 0 ? ['#10b981', '#f59e0b', '#ef4444'] : ['#e2e8f0'],
+                hoverBackgroundColor: totalTriage > 0 ? ['#059669', '#d97706', '#dc2626'] : ['#cbd5e1'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 14,
+                        padding: 16,
+                        font: { family: "'Inter', sans-serif", size: 12, weight: '600' }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            if (totalTriage === 0) return ' 0 Admissions (District Baseline)';
+                            return ' ' + ctx.label + ': ' + ctx.raw + ' cases';
+                        }
+                    }
+                }
+            },
+            cutout: '68%'
+        }
+    });
+
+    // Feedback Chart (True 0 Baseline)
+    const ctxFeedback = document.getElementById('feedbackChart').getContext('2d');
+    const feedbackLabels = [];
+    const feedbackData = [];
+    {% for fb in analytics.feedback_summary %}
+        feedbackLabels.push("{{ fb.referral_appropriateness }}");
+        feedbackData.push({{ fb.count }});
+    {% endfor %}
+
+    const hasFeedback = feedbackData.length > 0 && feedbackData.some(v => v > 0);
+    const displayFBLabels = hasFeedback ? feedbackLabels : ['Appropriate & Timely', 'Critical Life-Saving', 'Delayed Referral'];
+    const displayFBData = hasFeedback ? feedbackData : [0, 0, 0];
+
+    new Chart(ctxFeedback, {
+        type: 'bar',
+        data: {
+            labels: displayFBLabels,
+            datasets: [{
+                label: 'Audit Count',
+                data: displayFBData,
+                backgroundColor: '#0284c7',
+                hoverBackgroundColor: '#0369a1',
+                borderRadius: 8,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, font: { family: "'Inter', sans-serif" } },
+                    grid: { color: '#f1f5f9' },
+                    suggestedMax: 5
+                },
+                x: {
+                    ticks: { font: { family: "'Inter', sans-serif", size: 11, weight: '500' } },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+
+function filterFacilityMatrix() {
+    const q = document.getElementById("matrix-search")?.value.toLowerCase().trim() || "";
+    const rows = document.querySelectorAll("#matrix-table tbody tr");
+    rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? "" : "none";
+    });
+}
+</script>
+{% endblock %}

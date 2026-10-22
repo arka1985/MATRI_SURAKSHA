@@ -1,0 +1,908 @@
+{% extends "base.html" %}
+
+{% block title %}Clinical Decision Support System (CDSS) - MatriSuraksha{% endblock %}
+
+{% block content %}
+<!-- Clinical CDSS Hero Title -->
+<div class="cdss-title-header">
+    <div class="cdss-title-left">
+        <div class="cdss-badge-pill">
+            <i class="fa-solid fa-stethoscope"></i> Clinical Decision Support System &bull; Module 1
+        </div>
+        <h2>MatriSuraksha Clinical Decision Support System (CDSS) Workspace</h2>
+        <p>Continuous AI-Driven Referral Decision Support System &bull; Dakshin Dinajpur District Health Administration</p>
+    </div>
+    <div class="cdss-title-right">
+        <div class="facility-select-wrapper">
+            <label for="facility-filter"><i class="fa-solid fa-hospital"></i> Primary Unit:</label>
+            <select id="facility-filter" onchange="window.location.href='/plhcu?facility=' + this.value;">
+                <option value="ALL" {% if selected_facility == 'ALL' %}selected{% endif %}>All Feeder PLHCUs (District Aggregate)</option>
+                {% for u in primary_units %}
+                <option value="{{ u.facility_name }}" {% if selected_facility == u.facility_name %}selected{% endif %}>{{ u.facility_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- MAIN CDSS CLINICAL WORKSPACE: 4-CARD 2x2 BALANCED GRID -->
+<!-- ============================================================= -->
+<div class="cdss-2x2-grid">
+    <!-- ROW 1, COL 1: CARD 1 - Patient Vitals & Clinical Observation Entry -->
+    <div class="cdss-grid-card card-1-vitals">
+        <div class="cdss-grid-card-header">
+            <div class="card-header-titles">
+                <h3><i class="fa-solid fa-clipboard-user"></i> Patient Vitals &amp; Intake</h3>
+                <span class="card-subtitle">Intrapartum bedside monitoring parameters</span>
+            </div>
+            <span class="badge-orange">
+                <i class="fa-solid fa-location-dot"></i> {{ selected_facility if selected_facility != 'ALL' else 'Dakshin Dinajpur' }}
+            </span>
+        </div>
+
+        <div class="cdss-grid-card-body">
+            <!-- Stepper Progress Tracker -->
+            <div class="section-tracker-bar">
+                <div class="tracker-header">
+                    <span class="tracker-title"><i class="fa-solid fa-list-check"></i> Clinical Intake Stepper</span>
+                    <span id="tracker-count" class="tracker-badge-incomplete">
+                        <i class="fa-solid fa-circle-notch"></i> 0 / 3 Complete
+                    </span>
+                </div>
+                <div class="tracker-pills">
+                    <button type="button" id="pill-sec-1" class="tracker-pill active" onclick="switchClinicalTab('tab-vitals');">
+                        <span class="pill-step-num">1</span> <span>Vitals &amp; Labor</span>
+                    </button>
+                    <button type="button" id="pill-sec-2" class="tracker-pill" onclick="switchClinicalTab('tab-exam');">
+                        <span class="pill-step-num">2</span> <span>Exam &amp; Fetus</span>
+                    </button>
+                    <button type="button" id="pill-sec-3" class="tracker-pill" onclick="switchClinicalTab('tab-antenatal');">
+                        <span class="pill-step-num">3</span> <span>Antenatal &amp; Labs</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="cdss-intake-form" onsubmit="return false;" class="clinical-intake-form">
+                <!-- TAB 1: Maternal Vitals & Acute Labor Signs -->
+                <div id="tab-vitals" class="tab-content active">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="primary_unit_select">
+                                <i class="fa-solid fa-hospital"></i> Primary Health Unit (PLHCU) <span class="req">*</span>
+                            </label>
+                            <select id="primary_unit_select" name="facility_name" onchange="handlePrimaryUnitChange();" required>
+                                {% if primary_units|length == 0 %}
+                                    <option value="__ADD_NEW__" selected>+ Enter New Primary Health Unit...</option>
+                                {% else %}
+                                    <option value="" disabled {% if not selected_facility or selected_facility == 'ALL' %}selected{% endif %}>-- Select Primary Health Unit --</option>
+                                    {% for u in primary_units %}
+                                    <option value="{{ u.facility_name }}" {% if selected_facility == u.facility_name %}selected{% endif %}>{{ u.facility_name }}</option>
+                                    {% endfor %}
+                                    <option value="__ADD_NEW__">+ Enter New Primary Health Unit...</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="form-group" id="primary_unit_custom_group" style="flex: 2; {% if primary_units|length > 0 %}display: none;{% endif %}">
+                            <label for="primary_unit_custom">
+                                <i class="fa-solid fa-pen-to-square"></i> Name of Primary Health Unit <span class="req">*</span>
+                            </label>
+                            <input type="text" id="primary_unit_custom" placeholder="e.g. Harirampur BPHC / Kushmandi RH" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="block_name"><i class="fa-solid fa-map-location-dot"></i> Block Name</label>
+                            <input type="text" id="block_name" name="block_name" placeholder="e.g. Harirampur" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient_name">Mother's Name <span class="req">*</span></label>
+                            <input type="text" id="patient_name" name="patient_name" placeholder="e.g. Ananya Das" required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age (years) <span class="req">*</span></label>
+                            <input type="number" id="age" name="age" placeholder="e.g. 24" min="13" max="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="matrima_id">Matrima / ANC ID</label>
+                            <input type="text" id="matrima_id" name="matrima_id" placeholder="e.g. 1904523891" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="systolic_bp">Systolic BP <span class="req">*</span> <span class="unit-tag">mmHg</span></label>
+                            <input type="number" id="systolic_bp" name="systolic_bp" placeholder="e.g. 120 (Norm: 100-130)" min="60" max="240" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="diastolic_bp">Diastolic BP <span class="req">*</span> <span class="unit-tag">mmHg</span></label>
+                            <input type="number" id="diastolic_bp" name="diastolic_bp" placeholder="e.g. 80 (Norm: 60-85)" min="30" max="150" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pulse">
+                                Maternal Pulse <span class="req">*</span> <span class="unit-tag">bpm</span>
+                                <span id="pulse-badge-ui" class="triage-badge neutral pulse-sub-badge">Pending</span>
+                            </label>
+                            <input type="number" id="pulse" name="pulse" placeholder="e.g. 78 (Norm: 60-99)" min="35" max="220" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="temp">Temperature <span class="req">*</span> <span class="unit-tag">°F</span></label>
+                            <input type="number" id="temp" name="temp" placeholder="e.g. 98.4 (Norm: 97.5-99.0)" step="0.1" min="94" max="106" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="stage_of_labor">Stage of Labour <span class="req">*</span></label>
+                            <select id="stage_of_labor" name="stage_of_labor" required>
+                                <option value="" disabled selected>-- Select Stage --</option>
+                                <option value="Active Labour (First Stage)">Active Labour (First Stage)</option>
+                                <option value="Second Stage (Full Dilatation / Crowning)">Second Stage (Crowning)</option>
+                                <option value="Latent Phase">Latent Phase</option>
+                                <option value="Third Stage / Postpartum">Third Stage / Postpartum</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="labor_duration">Duration of Labour <span class="unit-tag">hours</span></label>
+                            <input type="number" id="labor_duration" name="labor_duration" placeholder="e.g. 4.0" min="0" max="48" step="0.5">
+                        </div>
+                    </div>
+
+                    <div class="tab-step-nav right-align">
+                        <button type="button" class="btn btn-step-next" onclick="nextClinicalTab('tab-exam');">
+                            <span>Step 2: Vaginal Exam &amp; Fetus</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Vaginal Examination & Fetal Well-being -->
+                <div id="tab-exam" class="tab-content" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fetal_heart_rate">Fetal Heart Rate <span class="req">*</span> <span class="unit-tag">bpm</span></label>
+                            <input type="number" id="fetal_heart_rate" name="fetal_heart_rate" placeholder="e.g. 140 (Norm: 110-160)" min="60" max="220" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="presentation">Presentation / Lie <span class="req">*</span></label>
+                            <select id="presentation" name="presentation" required>
+                                <option value="" disabled selected>-- Select Presentation --</option>
+                                <option value="Vertex/Cephalic">Vertex / Cephalic (Normal)</option>
+                                <option value="Breech">Breech (Frank / Complete)</option>
+                                <option value="Transverse/Shoulder">Transverse / Shoulder Lie</option>
+                                <option value="Brow/Face">Brow / Face Presentation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cervical_dilatation">Cervical Dilatation <span class="req">*</span> <span class="unit-tag">cm</span></label>
+                            <input type="number" id="cervical_dilatation" name="cervical_dilatation" placeholder="e.g. 4.0 (0-10 cm)" min="0" max="10" step="0.5" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="effacement">Effacement <span class="req">*</span> <span class="unit-tag">%</span></label>
+                            <input type="number" id="effacement" name="effacement" placeholder="e.g. 60%" min="0" max="100" step="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="station">Station of Head <span class="req">*</span></label>
+                            <select id="station" name="station" required>
+                                <option value="" disabled selected>-- Select Station --</option>
+                                <option value="-3">-3 (High floating)</option>
+                                <option value="-2">-2</option>
+                                <option value="-1">-1</option>
+                                <option value="0">0 (Ischial Spines / Engaged)</option>
+                                <option value="+1">+1</option>
+                                <option value="+2">+2 (Deep pelvic cavity)</option>
+                                <option value="+3">+3 (Perineal crowning)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="has_rom">Membrane Status <span class="req">*</span></label>
+                            <select id="has_rom" name="has_rom" required>
+                                <option value="" disabled selected>-- Select Membrane --</option>
+                                <option value="0">Intact Membranes</option>
+                                <option value="1">Ruptured Membranes (Active PROM)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width-field">
+                            <label for="liquor_color">Liquor / Amniotic Fluid Color <span class="req">*</span></label>
+                            <select id="liquor_color" name="liquor_color" required>
+                                <option value="" disabled selected>-- Select Liquor Color --</option>
+                                <option value="Clear">Clear / Physiological</option>
+                                <option value="Thin Meconium (Grade 1)">Thin Meconium-Stained Liquor (Grade 1)</option>
+                                <option value="Thick Meconium (Grade 2/3)">Thick Meconium-Stained Liquor (Grade 2/3 - Critical)</option>
+                                <option value="Blood-Stained">Blood-Stained (Concealed APH Risk)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="tab-step-nav between">
+                        <button type="button" class="btn btn-step-prev" onclick="prevClinicalTab('tab-vitals');">
+                            <i class="fa-solid fa-arrow-left"></i> <span>Back: Vitals</span>
+                        </button>
+                        <button type="button" class="btn btn-step-next" onclick="nextClinicalTab('tab-antenatal');">
+                            <span>Step 3: Antenatal &amp; Labs</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Antenatal Profile & Clinical Diagnostics -->
+                <div id="tab-antenatal" class="tab-content" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gestational_age">Gestational Age <span class="req">*</span> <span class="unit-tag">wks</span></label>
+                            <input type="number" id="gestational_age" name="gestational_age" placeholder="e.g. 39.0" step="0.1" min="20" max="44" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gravida">Gravida (G) <span class="req">*</span></label>
+                            <input type="number" id="gravida" name="gravida" placeholder="e.g. 1" min="1" max="12" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Parity (Live + Loss)</label>
+                            <div class="parity-dual-inputs">
+                                <input type="number" id="parity_live" name="parity_live" placeholder="0 Live" min="0" max="10">
+                                <input type="number" id="parity_loss" name="parity_loss" placeholder="0 Loss" min="0" max="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="hemoglobin">Hemoglobin <span class="req">*</span> <span class="unit-tag">g/dL</span></label>
+                            <input type="number" id="hemoglobin" name="hemoglobin" placeholder="e.g. 11.2 (Norm: ≥11)" step="0.1" min="3" max="18" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="urine_albumin">Urine Albumin (Dipstick) <span class="req">*</span></label>
+                            <select id="urine_albumin" name="urine_albumin" required>
+                                <option value="" disabled selected>-- Select Albumin --</option>
+                                <option value="Nil">Nil / Negative</option>
+                                <option value="Trace">Trace</option>
+                                <option value="+">+</option>
+                                <option value="++">++ (Pre-eclampsia Alert)</option>
+                                <option value="+++">+++ (Severe Pre-eclampsia)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="blood_sugar">Blood Sugar <span class="unit-tag">mg/dL</span></label>
+                            <input type="number" id="blood_sugar" name="blood_sugar" placeholder="e.g. 95 (FBS/RBS)" min="40" max="400">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="usg_placenta">USG Placenta <span class="req">*</span></label>
+                            <select id="usg_placenta" name="usg_placenta" required>
+                                <option value="" disabled selected>-- Select Placenta Position --</option>
+                                <option value="Normal">Normal Fundal / Anterior / Posterior</option>
+                                <option value="Low-lying">Low-lying Placenta</option>
+                                <option value="Placenta Previa">Placenta Previa (Critical Hemorrhage Risk)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label for="usg_afi">USG AFI (Liquor Volume) <span class="req">*</span></label>
+                            <select id="usg_afi" name="usg_afi" required>
+                                <option value="" disabled selected>-- Select Liquor Volume (AFI) --</option>
+                                <option value="Adequate">Adequate AFI</option>
+                                <option value="Oligohydramnios">Oligohydramnios (Reduced Fluid)</option>
+                                <option value="Polyhydramnios">Polyhydramnios (Excess Fluid)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row checkboxes-row">
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="prev_lucs" name="prev_lucs">
+                            <label for="prev_lucs">Previous Caesarean Section (LUCS Scar)</label>
+                        </div>
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="has_prev_comp" name="has_prev_comp">
+                            <label for="has_prev_comp">Prior Stillbirth or Recurrent Miscarriages</label>
+                        </div>
+                    </div>
+
+                    <div class="tab-step-nav between">
+                        <button type="button" class="btn btn-step-prev" onclick="prevClinicalTab('tab-exam');">
+                            <i class="fa-solid fa-arrow-left"></i> <span>Back: Exam</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Intake Dual Sequential Actions -->
+                <div class="intake-actions-dual">
+                    <button type="button" id="btn-save-maternal" class="btn btn-save-maternal" disabled onclick="handleSaveMaternalDetails();">
+                        <i class="fa-solid fa-floppy-disk"></i> <span>1. Save Maternal Details</span>
+                    </button>
+                    <button type="button" id="btn-run-ai-cdss" class="btn btn-run-cdss" disabled onclick="handleRunAICDSS();">
+                        <i class="fa-solid fa-microchip"></i> <span>2. AI Based CDSS for Referral</span>
+                    </button>
+                </div>
+                <div id="intake-status-hint" class="intake-status-hint">
+                    <i class="fa-solid fa-circle-info"></i> Complete all 3 clinical sections above to activate <strong>1. Save Maternal Details</strong>, then run AI CDSS.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ROW 1, COL 2: CARD 2 - Continuous Clinical Decision Support & Triage -->
+    <div class="cdss-grid-card card-2-triage">
+        <div class="cdss-grid-card-header">
+            <div class="card-header-titles">
+                <h3><i class="fa-solid fa-shield-heart"></i> Continuous Clinical Decision Support</h3>
+                <span class="card-subtitle">Real-time risk stratification &amp; protocol directives</span>
+            </div>
+            <span id="triage-badge" class="triage-badge neutral">AWAITING INTAKE</span>
+        </div>
+
+        <div class="cdss-grid-card-body" id="cdss-alert-box">
+            <!-- Clear Decision Headline -->
+            <div id="ai-decision-headline" class="ai-hero-decision neutral">
+                <i class="fa-solid fa-hourglass-start"></i>
+                <div class="ai-decision-text-wrap">
+                    <span class="ai-decision-lead">AI CLINICAL DECISION</span>
+                    <strong class="ai-decision-title">Awaiting Clinical Intake &amp; Algorithm Execution</strong>
+                </div>
+            </div>
+
+            <!-- Maternal Pulse Highlight Banner -->
+            <div id="pulse-highlight-container" class="pulse-box" style="display: none;">
+                <span class="pulse-dot"></span>
+                <div id="pulse-highlight-text" class="pulse-highlight-text">Maternal Pulse Normal</div>
+            </div>
+
+            <!-- Symmetrical Clinical Decision Summary with Visual Gauge -->
+            <div class="cdss-summary-card">
+                <!-- Symmetrical Score Gauge Cell -->
+                <div class="score-summary-cell">
+                    <div class="score-cell-top">
+                        <span class="summary-cell-caption"><i class="fa-solid fa-gauge-high"></i> AI Composite Risk Index</span>
+                        <span id="cdss-risk-tag" class="score-status-pill neutral">Awaiting Intake</span>
+                    </div>
+
+                    <div class="score-pill-row">
+                        <div class="score-badge-main">
+                            <span id="cdss-score-val" class="score-main-num">--</span>
+                            <span class="score-denom">/ 100</span>
+                        </div>
+
+                        <!-- Interactive Risk Meter Track -->
+                        <div class="risk-gauge-wrap">
+                            <div class="risk-gauge-bar">
+                                <div id="risk-gauge-fill" class="risk-gauge-fill" style="width: 0%;"></div>
+                            </div>
+                            <div class="risk-gauge-scale">
+                                <span class="scale-item green">0 Safe</span>
+                                <span class="scale-item yellow">30 Vigilance</span>
+                                <span class="scale-item red">70 Crisis</span>
+                                <span class="scale-item red">100</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Destination & Protocol Cell -->
+                <div class="dest-summary-cell">
+                    <span class="summary-cell-caption"><i class="fa-solid fa-hospital-user"></i> Care Destination &amp; Facility Protocol</span>
+                    <div id="cdss-dest-text" class="dest-formatted-content">
+                        Pending clinical data. Complete all 3 sections in Card 1, save details, and trigger AI CDSS.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinical Findings & Trigger Alerts -->
+            <div class="cdss-findings-wrap">
+                <div class="cdss-findings-title">
+                    <i class="fa-solid fa-stethoscope"></i> Clinical Assessment Findings &amp; Danger Signs
+                </div>
+                <ul id="cdss-triggers-list" class="trigger-list">
+                    <li class="trigger-item normal">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Awaiting admission vitals and intrapartum observations. Algorithms ready.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Protocol Directives -->
+            <div id="cdss-protocols-box" class="protocols-box">
+                <div class="protocols-title">
+                    <i class="fa-solid fa-clipboard-check"></i> Standard Clinical Protocol Directives
+                </div>
+                <ul id="cdss-protocols-list" class="protocols-list">
+                    <li class="protocol-item">
+                        <i class="fa-solid fa-clock"></i> <span>Awaiting patient triage to populate standard stabilization directives.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Quick Referral Slip Action -->
+            <div class="card-bottom-action">
+                <button id="quick-refer-btn" type="button" class="btn btn-danger btn-block" style="display: none;" onclick="triggerQuickReferralSlip();">
+                    <i class="fa-solid fa-truck-medical"></i> Generate Emergency Referral Slip
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2, COL 1: CARD 3 - Attending Doctor Clinical Evaluation & Final Disposition -->
+    <div class="cdss-grid-card card-3-doctor" id="doctor-eval-panel">
+        <div class="cdss-grid-card-header">
+            <div class="card-header-titles">
+                <h3><i class="fa-solid fa-user-doctor"></i> Attending Doctor Clinical Evaluation</h3>
+                <span class="card-subtitle">Supervisory alignment &amp; final clinical order</span>
+            </div>
+            <span class="badge-orange"><i class="fa-solid fa-signature"></i> Final Order</span>
+        </div>
+
+        <div class="cdss-grid-card-body">
+            <!-- SECTION 1: AI Decision Alignment (Agree vs Contradict/Override) -->
+            <div class="eval-section-block">
+                <label class="eval-section-label">
+                    <i class="fa-solid fa-scale-balanced"></i> 1. Clinician AI Alignment:
+                </label>
+                <div class="eval-radio-strip">
+                    <label class="eval-radio-opt agree">
+                        <input type="radio" name="doctor_decision_eval" value="AGREE" checked onchange="toggleDoctorOverride(false);">
+                        <div class="eval-opt-text">
+                            <strong><i class="fa-solid fa-circle-check"></i> Agree with AI Triage</strong>
+                            <small>Accept CDSS algorithmic recommendation and automated risk attribution.</small>
+                        </div>
+                    </label>
+                    <label class="eval-radio-opt override">
+                        <input type="radio" name="doctor_decision_eval" value="OVERRIDE" onchange="toggleDoctorOverride(true);">
+                        <div class="eval-opt-text">
+                            <strong><i class="fa-solid fa-triangle-exclamation"></i> Override / Contradict AI</strong>
+                            <small>Bedside clinical examination or logistical barrier supersedes AI decision.</small>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Contradiction Reason Box -->
+                <div id="doctor-contradiction-inputs" class="contradiction-box" style="display: none;">
+                    <div class="form-group">
+                        <label>Primary Clinical Reason for Contradicting AI Decision:</label>
+                        <select id="doc_override_category" class="form-control">
+                            <option value="Rapid Labor Progression (Imminent crowning, delivery at PHC safer than in transit)">Rapid Labor Progression (Crowning, unsafe to transfer in ambulance)</option>
+                            <option value="Maternal Vitals Stabilized after initial loading/antihypertensive therapy">Maternal vitals stabilized after initial medical intervention</option>
+                            <option value="Clinical internal exam confirms adequate pelvic dimensions & low presenting part">Clinical internal exam confirms adequate pelvis &amp; low descent</option>
+                            <option value="Patient / Family refused inter-hospital referral despite counseling">Patient / family refused referral despite explanation</option>
+                            <option value="Bedside clinical sign demands immediate transfer (AI was too conservative)">Bedside clinical emergency demands immediate transfer (AI was too conservative)</option>
+                            <option value="Logistical emergency (102 Ambulance unavailable / Road blocked due to weather)">Logistical emergency (Ambulance delay / Road block)</option>
+                            <option value="Other Specialist Clinical Judgment">Other specialist clinical judgment</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Doctor's Detailed Clinical Justification &amp; Audit Notes:</label>
+                        <textarea id="doc_override_notes" rows="2" placeholder="Record mandatory clinical rationale for audit trail and district review..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Final Disposition / Care Plan Decision -->
+            <div class="eval-section-block">
+                <label class="eval-section-label">
+                    <i class="fa-solid fa-list-check"></i> 2. Doctor's Final Management Order:
+                </label>
+                <div class="disposition-options-grid">
+                    <!-- Option A: Re-evaluate after designated hours -->
+                    <div class="disp-choice-card" onclick="selectDisposition('REEVALUATE');">
+                        <input type="radio" id="disp-reeval" name="doctor_final_disposition" value="REEVALUATE" checked onchange="handleDispRadio();">
+                        <div class="disp-choice-content">
+                            <label for="disp-reeval" class="disp-choice-title">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Re-evaluate after Set Hours
+                            </label>
+                            <p class="disp-choice-desc">
+                                Maintain active bedside observation at PLHCU. Conduct serial clinical vital re-assessment after doctor-designated hours.
+                            </p>
+                            
+                            <div class="reeval-controls-box">
+                                <span class="reeval-controls-title">Schedule Re-evaluation In:</span>
+                                <div class="reeval-inputs-row">
+                                    <select id="reeval-hours-select" onchange="calculateNextReevalTime();">
+                                        <option value="0.5">30 Minutes (High Vigilance Observation)</option>
+                                        <option value="1.0" selected>1 Hour (Active Phase Progression)</option>
+                                        <option value="2.0">2 Hours (Latent Phase Assessment)</option>
+                                        <option value="4.0">4 Hours (Routine Partograph Check)</option>
+                                        <option value="custom">Custom Hours...</option>
+                                    </select>
+                                    <input type="number" id="reeval-custom-hours" placeholder="Hours" step="0.5" min="0.5" max="24" style="display: none;" oninput="calculateNextReevalTime();">
+                                </div>
+                                <div class="next-due-pill">
+                                    <i class="fa-solid fa-bell"></i> Next Re-evaluation Due: <strong id="next-reeval-time-display">--:--</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option B: Decision to Refer to Higher Centre -->
+                    <div class="disp-choice-card refer-border" onclick="selectDisposition('REFER');">
+                        <input type="radio" id="disp-refer" name="doctor_final_disposition" value="REFER" onchange="handleDispRadio();">
+                        <div class="disp-choice-content">
+                            <label for="disp-refer" class="disp-choice-title refer">
+                                <i class="fa-solid fa-truck-medical"></i> Decision to Refer to Higher Centre (SDH / DH)
+                            </label>
+                            <p class="disp-choice-desc">
+                                Patient requires advanced obstetric interventions, emergency caesarean section, blood transfusion, or neonatal SNCU support.
+                            </p>
+
+                            <!-- Destination Picker for SDH / DH -->
+                            <div class="option-b-dest-wrap" id="option-b-dest-wrap" style="display: none; margin-top: 0.65rem; padding: 0.65rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px;">
+                                <label style="font-size: 0.8rem; font-weight: 700; color: #991b1b; display: block; margin-bottom: 0.35rem;">
+                                    <i class="fa-solid fa-hospital-user"></i> Designated Higher Referral Facility (SDH / DH):
+                                </label>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <select id="option-b-dest-select" style="flex: 1; min-width: 180px; padding: 0.35rem 0.5rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid #fda4af;" onchange="handleOptionBDestChange();">
+                                        {% if referral_centers|length == 0 %}
+                                            <option value="__ADD_NEW__" selected>+ Enter New SDH / DH Hospital...</option>
+                                        {% else %}
+                                            <option value="" disabled selected>-- Select Referral Hospital --</option>
+                                            {% for rc in referral_centers %}
+                                            <option value="{{ rc.facility_name }}">{{ rc.facility_name }}</option>
+                                            {% endfor %}
+                                            <option value="__ADD_NEW__">+ Enter New SDH / DH Hospital...</option>
+                                        {% endif %}
+                                    </select>
+                                    <input type="text" id="option-b-dest-custom" placeholder="e.g. Balurghat DH or Gangarampur SDH" style="flex: 1; min-width: 180px; padding: 0.35rem 0.5rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid #fda4af; {% if referral_centers|length > 0 %}display: none;{% endif %}">
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-danger btn-sm" onclick="triggerQuickReferralSlip(); event.stopPropagation();" style="margin-top: 0.65rem;">
+                                <i class="fa-solid fa-file-medical"></i> Generate Referral Slip
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Option C: Proceed with PLHCU Delivery -->
+                    <div class="disp-choice-card routine-border" onclick="selectDisposition('ROUTINE');">
+                        <input type="radio" id="disp-routine" name="doctor_final_disposition" value="ROUTINE" onchange="handleDispRadio();">
+                        <div class="disp-choice-content">
+                            <label for="disp-routine" class="disp-choice-title routine">
+                                <i class="fa-solid fa-baby"></i> Proceed to Normal Delivery at PLHCU
+                            </label>
+                            <p class="disp-choice-desc">
+                                Maternal and fetal status fully physiological. Manage labor at primary center with active 3rd stage management (AMTSL).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirm Action Bar -->
+            <div class="card-bottom-action">
+                <button type="button" class="btn btn-primary btn-block" onclick="saveDoctorClinicalOrder();">
+                    <i class="fa-solid fa-clipboard-check"></i> Final Decision taken by attending doctor
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2, COL 2: CARD 4 - SHAP Explainable AI Waterfall (TreeExplainer) -->
+    <div class="cdss-grid-card card-4-shap">
+        <div class="cdss-grid-card-header">
+            <div class="card-header-titles">
+                <h3><i class="fa-solid fa-brain"></i> SHAP Explainable AI Waterfall</h3>
+                <span class="card-subtitle">TreeExplainer localized feature attribution</span>
+            </div>
+            <span id="shap-prediction-badge" class="shap-prob-badge">Awaiting AI Run</span>
+        </div>
+
+        <div class="cdss-grid-card-body">
+            <div class="shap-math-caption">
+                Exact Shapley values (&phi;<sub>i</sub>) for individual patient parameters relative to Base Expected Value E[f(X)] = 0.49:
+            </div>
+
+            <!-- SHAP Waterfall Feature Bars -->
+            <div id="shap-waterfall-container" class="shap-waterfall">
+                <div class="shap-empty-state">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <p>Complete all 3 sections in Card 1, click <strong>"1. Save Maternal Details"</strong>, then trigger <strong>"2. AI Based CDSS for Referral"</strong> to visualize TreeExplainer feature attributions.</p>
+                </div>
+            </div>
+
+            <!-- Clinical Guideline Citations -->
+            <div id="shap-guidelines-box" class="shap-guidelines-box">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <strong>Clinical Explainer:</strong>
+                    <span>Awaiting patient intake execution to extract XGBoost/RandomForest decision path.</span>
+                </div>
+            </div>
+
+            <!-- Symmetrical Spacer Aligned with Card 3 -->
+            <div class="card-bottom-action">
+                <div class="shap-footer-legend">
+                    <span class="legend-chip red"><span class="chip-color red"></span> Increases Referral Risk</span>
+                    <span class="legend-chip blue"><span class="chip-color blue"></span> Protective / Low Risk</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- SECONDARY SECTION: DISTRICT REGISTRY & HISTORICAL RECORDS (MIS) -->
+<!-- ============================================================= -->
+<div class="mis-bottom-section" id="mis-archive">
+    {% if current_user %}
+    <!-- UNLOCKED FACILITY REGISTRY (AUTHORIZED CLINICAL PERSONNEL) -->
+    <div class="panel">
+        <div class="panel-header" onclick="toggleMISRegistry();" style="cursor: pointer;">
+            <div class="panel-header-left">
+                <h3><i class="fa-solid fa-database"></i> Facility Maternity Registry &amp; Patient Records Archive (MIS)</h3>
+                <span class="panel-header-sub">Dakshin Dinajpur District Electronic Maternity Registry</span>
+            </div>
+            <div class="panel-header-right">
+                <span class="badge badge-auth"><i class="fa-solid fa-lock-open"></i> Logged In: {{ current_user.full_name.split('(')[0].strip() }}</span>
+                <span class="badge badge-count">{{ patients|length }} Registered Mothers</span>
+                <span id="mis-toggle-icon" class="mis-toggle-icon"><i class="fa-solid fa-chevron-down"></i></span>
+            </div>
+        </div>
+
+        <div id="mis-registry-body">
+            <!-- Table Search and Quick Filters -->
+            <div class="table-toolbar">
+                <div class="search-input-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="registry-search-input" placeholder="Search by Mother's Name, Study ID, or Facility..." oninput="filterRegistryTable();">
+                </div>
+                <div class="filter-pills-wrap">
+                    <button type="button" class="filter-pill active" onclick="setRegistryFilter('ALL', this);">All</button>
+                    <button type="button" class="filter-pill red" onclick="setRegistryFilter('RED', this);">Red</button>
+                    <button type="button" class="filter-pill yellow" onclick="setRegistryFilter('YELLOW', this);">Yellow</button>
+                    <button type="button" class="filter-pill green" onclick="setRegistryFilter('GREEN', this);">Green</button>
+                    <button type="button" class="filter-pill transfer" onclick="setRegistryFilter('TRANSFERRED', this);">Transferred</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="patients-table">
+                    <thead>
+                        <tr>
+                            <th>Study ID</th>
+                            <th>Entry Timestamp &amp; Activity</th>
+                            <th>Mother &amp; Age</th>
+                            <th>Facility &amp; Block</th>
+                            <th>Vitals Snapshot</th>
+                            <th>AI Triage</th>
+                            <th>Clinical Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in patients %}
+                        <tr data-triage="{{ p.cdss_triage_level }}" data-status="{{ p.referral_status }}" data-name="{{ p.patient_name|lower }}" data-facility="{{ p.facility_name|lower }}">
+                            <td>
+                                <a href="{{ url_for('patient_detail_view', study_id=p.study_id) }}" class="study-id-link" title="View Confidential Patient Record">
+                                    #{{ p.study_id }} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <div class="table-timestamp">
+                                    <i class="fa-regular fa-clock text-primary-blue"></i>
+                                    <strong>{{ p.admission_date or (p.created_at[:10] if p.created_at else 'Active') }}</strong>
+                                </div>
+                                <small class="text-muted">{{ p.admission_time or (p.created_at[11:16] if p.created_at and p.created_at|length >= 16 else '') }}</small>
+                                {% if p.referral_status == 'REFERRED' and p.referral_time %}
+                                <div class="table-activity-tag red" title="Referral Dispatched">
+                                    <i class="fa-solid fa-truck-medical"></i> {{ p.referral_time }}
+                                </div>
+                                {% elif p.created_at %}
+                                <div class="table-activity-tag slate" title="Intake Timestamp">
+                                    <i class="fa-solid fa-calendar-check"></i> {{ p.created_at }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-patient-name">{{ p.patient_name }}</div>
+                                <small class="table-patient-sub">{{ p.age|round|int }}y &bull; G{{ p.gravida }}P{{ p.parity_live or 0 }} &bull; {{ p.gestational_age }}w</small>
+                            </td>
+                            <td>
+                                <div><strong>{{ p.facility_name }}</strong></div>
+                                <small class="text-muted">{{ p.block_name }}</small>
+                            </td>
+                            <td>
+                                <div class="table-vitals-row">BP: <strong>{{ p.systolic_bp|round|int }}/{{ p.diastolic_bp|round|int }}</strong></div>
+                                <small class="table-vitals-sub">Hb: {{ p.hemoglobin }} | FHR: {{ p.fetal_heart_rate|round|int }} | Pulse: {{ p.pulse or 80 }}</small>
+                            </td>
+                            <td>
+                                <span class="triage-badge {{ p.cdss_triage_level|lower }}">{{ p.cdss_triage_level }}</span>
+                            </td>
+                            <td>
+                                {% if p.referral_status == 'REFERRED' %}
+                                    <span class="status-pill red"><i class="fa-solid fa-ambulance"></i> Transferred ({{ p.referral_facility }})</span>
+                                {% elif p.referral_status == 'COMPLETED' %}
+                                    <span class="status-pill green"><i class="fa-solid fa-check-double"></i> Delivered</span>
+                                {% elif p.referral_status == 'DELIVERED_LOCAL' %}
+                                    <span class="status-pill blue"><i class="fa-solid fa-baby"></i> Delivered at PLHCU</span>
+                                {% else %}
+                                    <span class="status-pill slate">Admitted</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="table-actions-strip">
+                                    <a href="{{ url_for('patient_detail_view', study_id=p.study_id) }}" class="btn btn-outline btn-xs" title="Continuous Re-Assessment &amp; Timeline">
+                                        <i class="fa-solid fa-timeline"></i> Timeline
+                                    </a>
+                                    {% if p.referral_status == 'REFERRED' %}
+                                    <button type="button" class="btn btn-outline btn-xs" onclick="openReferralModal('{{ p.study_id }}', '{{ p.patient_name }}', '{{ p.cdss_triage_level }}', '{{ p.cdss_triggers }}')">
+                                        <i class="fa-solid fa-file-invoice"></i> Slip
+                                    </button>
+                                    {% elif p.cdss_triage_level in ['RED', 'YELLOW'] %}
+                                    <button type="button" class="btn btn-danger btn-xs" onclick="openReferralModal('{{ p.study_id }}', '{{ p.patient_name }}', '{{ p.cdss_triage_level }}', '{{ p.cdss_triggers }}')">
+                                        <i class="fa-solid fa-truck-medical"></i> Refer
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2.5rem 1rem; color: #64748b;">
+                                <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+                                <strong>District Maternity Registry is currently empty.</strong>
+                                <p style="font-size: 0.8rem; margin-top: 0.25rem;">Complete the clinical intake in Card 1 to register the first patient starting from <strong>#0001</strong>.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- LOCKED SECURITY BARRIER: MANDATORY USER ID AND PASSWORD REQUIRED -->
+    <div class="panel locked-panel">
+        <div class="panel-header locked-header">
+            <h3><i class="fa-solid fa-lock"></i> Facility Maternity Registry &amp; Patient Records Archive (MIS)</h3>
+            <span class="badge badge-locked"><i class="fa-solid fa-shield-halved"></i> Access Restricted</span>
+        </div>
+        <div class="locked-body">
+            <div class="locked-icon-wrap">
+                <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <h3>Protected Maternal Clinical Archive</h3>
+            <p>
+                Mandatory Healthcare User ID &amp; Security Password are required to access confidential patient records, obstetric history, and triage timelines under West Bengal Public Health Clinical Data Protection Protocols.
+            </p>
+
+            <div class="locked-login-card">
+                <form action="{{ url_for('login') }}" method="POST">
+                    <input type="hidden" name="next" value="{{ url_for('plhcu_view') }}#mis-archive">
+                    <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
+                        <label><i class="fa-solid fa-id-badge"></i> Healthcare User ID</label>
+                        <input type="text" name="username" placeholder="e.g. dr.biswas or nurse.anm" required>
+                    </div>
+                    <div class="form-group" style="text-align: left; margin-bottom: 1.15rem;">
+                        <label><i class="fa-solid fa-key"></i> Security Password</label>
+                        <input type="password" name="password" placeholder="Enter clinical password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-lock-open"></i> Authenticate &amp; Unlock Registry
+                    </button>
+                </form>
+                <div class="auth-hint-box">
+                    Authorized Staff: <code>dr.biswas</code>, <code>dr.arka</code>, <code>nurse.anm</code>, <code>cmoh.dd</code> (Pass: <code>matri123</code>)
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Digital Referral Slip Modal -->
+<div id="referral-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="referral-slip" id="printable-slip">
+            <div class="slip-header">
+                <div class="slip-header-brand">
+                    <img src="{{ url_for('static', filename='img/matrisuraksha_official_logo.png') }}" alt="Logo" class="slip-logo">
+                    <div class="slip-titles">
+                        <h3>GOVERNMENT OF WEST BENGAL &bull; HEALTH &amp; FAMILY WELFARE</h3>
+                        <h2>MATRISURAKSHA EMERGENCY REFERRAL SLIP</h2>
+                        <p>Dakshin Dinajpur District AI-Assisted Clinical Transfer Dossier &bull; মাতৃসুরক্ষা</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slip-section">
+                <h4>1. Referring Facility &amp; Patient Demographics</h4>
+                <div class="slip-grid">
+                    <div><span class="slip-lbl">Study ID:</span> <strong id="modal-study-id">0004</strong></div>
+                    <div><span class="slip-lbl">Patient Name:</span> <strong id="modal-patient-name">Mother</strong></div>
+                    <div><span class="slip-lbl">Referring Center:</span> <strong>{{ selected_facility if selected_facility != 'ALL' else 'Primary Health Unit' }}</strong></div>
+                    <div><span class="slip-lbl">Triage Level:</span> <span id="modal-triage-badge" class="triage-badge red">RED</span></div>
+                </div>
+            </div>
+
+            <div class="slip-section">
+                <h4>2. Clinical Referral Details &amp; Transport Order</h4>
+                <form id="referral-dispatch-form" onsubmit="submitReferralDispatch(event);">
+                    <input type="hidden" id="referral-study-id-input" name="study_id">
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Designated Higher Referral Facility (SDH / DH) <span class="req">*</span></label>
+                            <select id="referral-dest-select" onchange="handleReferralModalDestChange();" required>
+                                {% if referral_centers|length == 0 %}
+                                    <option value="__ADD_NEW__" selected>+ Enter New SDH / DH Hospital...</option>
+                                {% else %}
+                                    <option value="" disabled selected>-- Select Designated Referral Centre --</option>
+                                    {% for rc in referral_centers %}
+                                    <option value="{{ rc.facility_name }}">{{ rc.facility_name }}</option>
+                                    {% endfor %}
+                                    <option value="__ADD_NEW__">+ Enter New SDH / DH Hospital...</option>
+                                {% endif %}
+                            </select>
+                            <input type="text" id="referral_dest_custom" class="form-control" placeholder="e.g. Balurghat District Hospital (DH) or Gangarampur SDH" style="margin-top: 0.5rem; {% if referral_centers|length > 0 %}display: none;{% endif %}">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Mode of Transport <span class="req">*</span></label>
+                            <select id="transport-mode-select">
+                                <option value="102 Ambulance">102 Government Ambulance (Dialed)</option>
+                                <option value="108 Emergency Ambulance">108 Emergency ALS Ambulance</option>
+                                <option value="Private Vehicle">Private / Hired Transport</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Primary Clinical Reason &amp; Danger Signs <span class="req">*</span></label>
+                        <textarea id="referral-reason-input" rows="2" required></textarea>
+                    </div>
+
+                    <div class="stabilization-checklist-box">
+                        <h4><i class="fa-solid fa-kit-medical"></i> Mandatory Pre-Departure Stabilization Checklist</h4>
+                        <div class="checklist-items">
+                            <label><input type="checkbox" checked disabled> IV Cannula (16-18G) placed in situ with Ringer Lactate drip.</label>
+                            <label><input type="checkbox" checked disabled> MgSO4 Loading Dose administered if SBP &ge; 160 or DBP &ge; 110.</label>
+                            <label><input type="checkbox" checked disabled> Left lateral position maintained with maternal oxygen if distressed.</label>
+                            <label><input type="checkbox" checked disabled> Referral Hospital notified via phone before departure.</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions-bar">
+                        <button type="button" class="btn btn-outline" onclick="closeReferralModal();">Cancel</button>
+                        <button type="button" class="btn btn-outline" onclick="window.print();"><i class="fa-solid fa-print"></i> Print Slip</button>
+                        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-paper-plane"></i> Confirm &amp; Dispatch Referral</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter for MIS registry table
+function filterRegistryTable() {
+    const query = document.getElementById("registry-search-input")?.value.toLowerCase().trim() || "";
+    const rows = document.querySelectorAll("#patients-table tbody tr");
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+    });
+}
+
+function setRegistryFilter(filterType, el) {
+    document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+    if (el) el.classList.add("active");
+    
+    const rows = document.querySelectorAll("#patients-table tbody tr");
+    rows.forEach(row => {
+        const triage = row.getAttribute("data-triage") || "";
+        const status = row.getAttribute("data-status") || "";
+        
+        if (filterType === "ALL") {
+            row.style.display = "";
+        } else if (filterType === "TRANSFERRED") {
+            row.style.display = (status === "REFERRED") ? "" : "none";
+        } else {
+            row.style.display = (triage === filterType) ? "" : "none";
+        }
+    });
+}
+</script>
+{% endblock %}

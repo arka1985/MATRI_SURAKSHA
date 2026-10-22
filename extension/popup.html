@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatriSuraksha CDSS Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="ext-header">
+    <img src="icons/icon48.png" alt="MatriSuraksha Logo" class="ext-logo">
+    <div class="ext-title">
+      <h2>MatriSuraksha <span>মাতৃসুরক্ষা</span></h2>
+      <p>AI Referral Decision Support &bull; West Bengal</p>
+    </div>
+  </div>
+
+  <div class="ext-body">
+    <!-- Live AI Decision Banner -->
+    <div id="ai-decision-card" class="ai-card green">
+      <div class="ai-badge" id="ai-badge">GREEN: SAFE FOR PLHCU</div>
+      <div class="ai-headline" id="ai-headline">DO NOT REFER — Routine Care</div>
+      <div class="ai-rationale" id="ai-rationale">No acute maternal or fetal danger signs detected.</div>
+    </div>
+
+    <!-- Pulse Alert -->
+    <div id="pulse-alert-box" class="pulse-box" style="display: none;">
+      <span class="pulse-dot"></span>
+      <span id="pulse-alert-text">Maternal Pulse Warning</span>
+    </div>
+
+    <!-- Quick Vitals Form -->
+    <form id="quick-triage-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Systolic BP (mmHg)</label>
+          <input type="number" id="ext-sbp" value="120" required>
+        </div>
+        <div class="form-group">
+          <label>Diastolic BP (mmHg)</label>
+          <input type="number" id="ext-dbp" value="80" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hemoglobin (g/dL)</label>
+          <input type="number" id="ext-hb" value="11.0" step="0.1" required>
+        </div>
+        <div class="form-group">
+          <label>Maternal Pulse (bpm)</label>
+          <input type="number" id="ext-pulse" value="78" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fetal Heart Rate (bpm)</label>
+          <input type="number" id="ext-fhr" value="140" required>
+        </div>
+        <div class="form-group">
+          <label>Gestation (Weeks)</label>
+          <input type="number" id="ext-ga" value="39" step="0.5" required>
+        </div>
+      </div>
+
+      <div class="form-group-checkbox">
+        <input type="checkbox" id="ext-rom">
+        <label for="ext-rom">Membranes Ruptured / Active Dribbling (PROM)</label>
+      </div>
+    </form>
+
+    <!-- Explainability Triggers -->
+    <div class="explain-section">
+      <h4><span class="icon">🔍</span> AI Explainability & Risk Drivers</h4>
+      <ul id="explain-list">
+        <li>Normotensive blood pressure (&lt;140/90 mmHg)</li>
+        <li>Physiological fetal heart rate (110-160 bpm)</li>
+      </ul>
+    </div>
+
+    <!-- Full App Link -->
+    <a href="http://127.0.0.1:5050/plhcu" target="_blank" class="ext-btn">
+      Open Full MatriSuraksha Portal &rarr;
+    </a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

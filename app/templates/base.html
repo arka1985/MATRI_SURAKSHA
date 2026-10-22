@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>{% block title %}MatriSuraksha - AI Continuous Clinical Decision Support{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=10">
+</head>
+<body>
+    <!-- Clean Clinical Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="{{ url_for('plhcu_view') }}" class="brand-link">
+                    <img src="{{ url_for('static', filename='img/matrisuraksha_official_logo.png') }}" alt="MatriSuraksha Official Logo" class="brand-emblem-img">
+                    <div class="brand-titles">
+                        <div class="brand-main">
+                            <span>MatriSuraksha</span>
+                            <span class="brand-bengali">মাতৃসুরক্ষা</span>
+                        </div>
+                        <span class="brand-sub">Dakshin Dinajpur Continuous Intrapartum CDSS</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="module-nav" aria-label="Clinical Modules Navigation">
+                <a href="{{ url_for('plhcu_view') }}" class="nav-item {% if active_module == 'plhcu' %}active{% endif %}">
+                    <i class="fa-solid fa-hospital-user"></i>
+                    <span>1. PLHCU (First Admitted)</span>
+                </a>
+                <a href="{{ url_for('referral_view') }}" class="nav-item {% if active_module == 'referral' %}active{% endif %}">
+                    <i class="fa-solid fa-truck-medical"></i>
+                    <span>2. Referred Hospital (SDH/DH)</span>
+                </a>
+                <a href="{{ url_for('cmoh_view') }}" class="nav-item {% if active_module == 'cmoh' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>3. CMOH District Executive</span>
+                </a>
+            </nav>
+
+            <div class="header-actions">
+                {% if current_user %}
+                <div class="user-pill">
+                    <i class="fa-solid fa-user-doctor"></i>
+                    <span class="user-name">{{ current_user.full_name.split('(')[0].strip() }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-link" title="Logout"><i class="fa-solid fa-power-off"></i></a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn-staff-login">
+                    <i class="fa-solid fa-lock"></i> Staff Login
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Prominent Research Grant & Investigators Section -->
+    <section class="grant-bottom-section">
+        <div class="grant-bottom-container">
+            <div class="grant-award-box">
+                <div class="grant-seal"><i class="fa-solid fa-award"></i></div>
+                <div class="grant-award-text">
+                    <h3>Research Project Grant Acknowledgment</h3>
+                    <p>This Research Project Received the financial Grant from <strong>Institute of Health and Family Welfare (IHFW), Department of Health and Family Welfare, Government of West Bengal</strong>.</p>
+                    <div class="research-disclaimer-box">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span><strong>Disclaimer:</strong> This is a research project currently under development and validation stage; it is not recommended for clinical purpose yet.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="investigators-grid">
+                <div class="investigator-card">
+                    <span class="badge-role pi">Principal Investigator (PI)</span>
+                    <h4>Dr. Dilip Kumar Biswas</h4>
+                    <p class="role-desc">Deputy CMOH – III, Dakshin Dinajpur</p>
+                    <p class="inst-desc">Department of Health & Family Welfare, Govt. of West Bengal</p>
+                </div>
+
+                <div class="investigator-card">
+                    <span class="badge-role copi">Co-Principal Investigator</span>
+                    <h4>Dr. Arkaprabha Sau</h4>
+                    <p class="role-desc">Public Health Specialist and Chief AI ML Scientist</p>
+                </div>
+
+                <div class="investigator-card">
+                    <span class="badge-role copi">Co-Principal Investigator</span>
+                    <h4>Dr. Ishita Bhakta</h4>
+                    <p class="role-desc">Assistant Professor, Department of Information Technology</p>
+                    <p class="inst-desc">Techno Main Salt Lake, Kolkata</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Institutional Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 MatriSuraksha Initiative &bull; Dakshin Dinajpur District Referral Decision Support System &bull; Targeted for SDG 3.1 & 3.2</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=10"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

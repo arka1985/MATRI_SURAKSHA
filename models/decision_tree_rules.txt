@@ -1,0 +1,16 @@
+|--- Gestational_Age <= 40.50
+|   |--- Hemoglobin <= 10.65
+|   |   |--- Parity_Live <= 1.50
+|   |   |   |--- class: 0
+|   |   |--- Parity_Live >  1.50
+|   |   |   |--- class: 1
+|   |--- Hemoglobin >  10.65
+|   |   |--- Gestational_Age <= 38.50
+|   |   |   |--- class: 1
+|   |   |--- Gestational_Age >  38.50
+|   |   |   |--- class: 0
+|--- Gestational_Age >  40.50
+|   |--- ANC_Visits <= 4.50
+|   |   |--- class: 1
+|   |--- ANC_Visits >  4.50
+|   |   |--- class: 1

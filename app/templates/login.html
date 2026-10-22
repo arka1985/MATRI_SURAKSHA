@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Clinical Staff Login - MatriSuraksha{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo-wrap">
+                <img src="{{ url_for('static', filename='img/matrisuraksha_official_logo.png') }}" alt="MatriSuraksha Logo" class="login-logo">
+            </div>
+            <h2>Clinical Security Access Layer</h2>
+            <p>MatriSuraksha &bull; মাতৃসুরক্ষা &bull; Dakshin Dinajpur Continuous CDSS</p>
+            <div class="login-badge-seal">
+                <i class="fa-solid fa-shield-halved"></i> Department of Health &amp; Family Welfare, Govt. of West Bengal
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="login-error-alert">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}" class="login-form">
+            <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
+            <div class="form-group">
+                <label for="username"><i class="fa-solid fa-id-badge"></i> Healthcare User ID</label>
+                <div class="input-icon-wrap">
+                    <input type="text" id="username" name="username" placeholder="e.g. dr.biswas, dr.phc or dr.bhakta" required autofocus autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password"><i class="fa-solid fa-lock"></i> Security Password</label>
+                <div class="input-icon-wrap">
+                    <input type="password" id="password" name="password" placeholder="Enter clinical security password" required autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-login-submit">
+                <i class="fa-solid fa-right-to-bracket"></i> Authenticate &amp; Access Registry
+            </button>
+        </form>
+
+        <!-- Fast-Fill Demo Clinical Roles for Intuitive Testing -->
+        <div class="login-quick-roles">
+            <div class="quick-roles-title">
+                <i class="fa-solid fa-user-check"></i> Fast-Fill Authorized Healthcare Credentials:
+            </div>
+            <div class="quick-role-buttons">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.biswas', 'matri123');" title="Login as Principal Investigator">
+                    <i class="fa-solid fa-user-doctor"></i>
+                    <div>
+                        <strong>Dr. D.K. Biswas</strong>
+                        <small>Principal Investigator (Dy. CMOH)</small>
+                    </div>
+                </button>
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.arka', 'matri123');" title="Login as Chief AI Scientist (Co-PI)">
+                    <i class="fa-solid fa-microchip"></i>
+                    <div>
+                        <strong>Dr. Arkaprabha Sau</strong>
+                        <small>Chief AI Scientist &amp; Co-PI</small>
+                    </div>
+                </button>
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.bhakta', 'matri123');" title="Login as Dr. Ishita Bhakta (Co-PI)">
+                    <i class="fa-solid fa-user-doctor"></i>
+                    <div>
+                        <strong>Dr. Ishita Bhakta</strong>
+                        <small>Co-PI &amp; Assistant Professor</small>
+                    </div>
+                </button>
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.phc', 'matri123');" title="Login as PHC Doctor">
+                    <i class="fa-solid fa-stethoscope"></i>
+                    <div>
+                        <strong>PHC Doctor</strong>
+                        <small>Primary Health Unit (PLHCU)</small>
+                    </div>
+                </button>
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.referral', 'matri123');" title="Login as Doctor at Referred Hospital">
+                    <i class="fa-solid fa-hospital-user"></i>
+                    <div>
+                        <strong>Doctor at Referred Hospital</strong>
+                        <small>Specialist (SDH / DH)</small>
+                    </div>
+                </button>
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('cmoh.dd', 'matri123');" title="Login as District CMOH">
+                    <i class="fa-solid fa-hospital"></i>
+                    <div>
+                        <strong>CMOH Dakshin Dinajpur</strong>
+                        <small>District Surveillance Executive</small>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function quickFillLogin(user, pass) {
+    const uInput = document.getElementById("username");
+    const pInput = document.getElementById("password");
+    if (uInput && pInput) {
+        uInput.value = user;
+        pInput.value = pass;
+        uInput.focus();
+    }
+}
+</script>
+{% endblock %}

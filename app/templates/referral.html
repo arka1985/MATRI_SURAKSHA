@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Module 2: Secondary & Tertiary Referral Center - MatriSuraksha{% endblock %}
+
+{% block content %}
+<!-- Command Center Hero Title -->
+<div class="cdss-title-header referral-header">
+    <div class="cdss-title-left">
+        <div class="cdss-badge-pill badge-red-light">
+            <i class="fa-solid fa-truck-medical"></i> Secondary &amp; Tertiary Referral Command &bull; Module 2
+        </div>
+        <h2>Referred Hospital Emergency Command &amp; Closed-Loop Feedback Console</h2>
+        <p>Receiving Emergency Inbound Transfers, Managing Specialist Deliveries &amp; Closing the Quality Loop with Feeder PHCs</p>
+    </div>
+    <div class="cdss-title-right">
+        <div class="facility-select-wrapper">
+            <label for="center-filter"><i class="fa-solid fa-hospital-user"></i> Receiving Center:</label>
+            <select id="center-filter" onchange="window.location.href='/referral?center=' + this.value;">
+                <option value="ALL" {% if selected_center == 'ALL' %}selected{% endif %}>All Referral Centers (SDH / DH)</option>
+                {% for rc in referral_centers %}
+                <option value="{{ rc.facility_name }}" {% if selected_center == rc.facility_name %}selected{% endif %}>{{ rc.facility_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Beautiful Symmetrical Referral KPI Cards (4 Equal Columns) -->
+<div class="referral-kpi-grid">
+    <div class="ref-kpi-card red">
+        <div class="ref-kpi-icon"><i class="fa-solid fa-ambulance"></i></div>
+        <div class="ref-kpi-info">
+            <span class="ref-kpi-label">Active Inbound Queue</span>
+            <div class="ref-kpi-val">{{ incoming_patients|length }} <small>Mothers</small></div>
+            <span class="ref-kpi-sub"><i class="fa-solid fa-triangle-exclamation"></i> Awaiting specialist care</span>
+        </div>
+    </div>
+
+    <div class="ref-kpi-card green">
+        <div class="ref-kpi-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div class="ref-kpi-info">
+            <span class="ref-kpi-label">Closed-Loop Feedbacks</span>
+            <div class="ref-kpi-val">{{ feedbacks|length }} <small>Audited</small></div>
+            <span class="ref-kpi-sub"><i class="fa-solid fa-paper-plane"></i> Transmitted to feeder PHCs</span>
+        </div>
+    </div>
+
+    <div class="ref-kpi-card blue">
+        <div class="ref-kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div class="ref-kpi-info">
+            <span class="ref-kpi-label">Stabilization Quality</span>
+            <div class="ref-kpi-val">{{ stabilization_rate }}% <small>{{ feedbacks|length }} Audited</small></div>
+            <span class="ref-kpi-sub">
+                {% if feedbacks|length > 0 %}
+                <i class="fa-solid fa-check"></i> IV Line &amp; pre-transfer protocol
+                {% else %}
+                <i class="fa-solid fa-clock"></i> Awaiting inbound audits (0 baseline)
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="ref-kpi-card purple">
+        <div class="ref-kpi-icon"><i class="fa-solid fa-network-wired"></i></div>
+        <div class="ref-kpi-info">
+            <span class="ref-kpi-label">Feeder PHC Network</span>
+            <div class="ref-kpi-val">{{ feeder_count }} <small>Units</small></div>
+            <span class="ref-kpi-sub"><i class="fa-solid fa-location-dot"></i> {{ feeder_units_list }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Split Console: Inbound Emergency Queue (Left) & Closed-Loop Feedback History (Right) -->
+<div class="referral-workspace-grid">
+    <!-- LEFT PANEL: Incoming Emergency Patients Queue -->
+    <div class="ref-panel">
+        <div class="ref-panel-header">
+            <div class="ref-panel-title">
+                <i class="fa-solid fa-bell-concierge text-red"></i>
+                <h3>Inbound Emergency Referral Queue</h3>
+                <span class="count-tag red">{{ incoming_patients|length }}</span>
+            </div>
+            <span class="badge-facility-center">{{ selected_center if selected_center != 'ALL' else 'All Designated Referral Centers' }}</span>
+        </div>
+
+        {% if incoming_patients|length == 0 %}
+        <div class="empty-state-box">
+            <div class="empty-icon"><i class="fa-solid fa-shield-heart"></i></div>
+            <h4>No Active Inbound Referrals</h4>
+            <p>All emergency referrals from feeder primary health centers have been processed and delivery outcomes documented.</p>
+        </div>
+        {% else %}
+        <div class="referral-queue-list">
+            {% for p in incoming_patients %}
+            <div class="patient-queue-card {% if p.cdss_triage_level == 'RED' %}border-red{% else %}border-yellow{% endif %}">
+                <div class="queue-card-top">
+                    <div>
+                        <span class="study-id-pill">#{{ p.study_id }}</span>
+                        <strong class="patient-title">{{ p.patient_name }}</strong>
+                        <span class="patient-age-tag">({{ p.age|round|int }}y &bull; G{{ p.gravida }} &bull; {{ p.gestational_age }}w)</span>
+                    </div>
+                    <span class="triage-badge {{ p.cdss_triage_level|lower }}">{{ p.cdss_triage_level }} EMERGENCY</span>
+                </div>
+
+                <div class="queue-card-details">
+                    <div class="detail-row">
+                        <span class="detail-lbl"><i class="fa-solid fa-location-arrow"></i> Referring Unit:</span>
+                        <strong class="text-primary-blue">{{ p.facility_name }} ({{ p.block_name }})</strong>
+                    </div>
+
+                    <div class="vitals-strip">
+                        <div class="v-item">BP: <strong>{{ p.systolic_bp|round|int }}/{{ p.diastolic_bp|round|int }}</strong></div>
+                        <div class="v-item">Pulse: <strong>{{ p.pulse or 80 }} bpm</strong></div>
+                        <div class="v-item">Hb: <strong>{{ p.hemoglobin }} g/dL</strong></div>
+                        <div class="v-item">FHR: <strong>{{ p.fetal_heart_rate|round|int }} bpm</strong></div>
+                        <div class="v-item">ROM: <strong>{% if p.has_rom == 1 %}Leaking (PROM){% else %}Intact{% endif %}</strong></div>
+                    </div>
+
+                    <div class="reason-alert-box">
+                        <strong><i class="fa-solid fa-triangle-exclamation"></i> Primary Danger Sign / Reason:</strong>
+                        <span>{{ p.referral_reason or p.cdss_triggers or 'Critical intrapartum complication transferred for specialist intervention.' }}</span>
+                    </div>
+                </div>
+
+                <div class="queue-card-action">
+                    <button type="button" class="btn btn-primary" onclick="openFeedbackModal('{{ p.study_id }}', '{{ p.patient_name }}', '{{ p.facility_name }}', '{{ p.referral_reason or p.cdss_triggers }}', '{{ p.referral_facility }}');">
+                        <i class="fa-solid fa-notes-medical"></i> Accept &amp; Record Feedback
+                    </button>
+                    <a href="{{ url_for('patient_detail_view', study_id=p.study_id) }}" class="btn btn-outline" title="View Serial Intrapartum Timeline">
+                        <i class="fa-solid fa-timeline"></i> Timeline
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT PANEL: Transmitted Closed-Loop Specialist Feedback Stream -->
+    <div class="ref-panel">
+        <div class="ref-panel-header">
+            <div class="ref-panel-title">
+                <i class="fa-solid fa-comment-medical text-green"></i>
+                <h3>Transmitted Closed-Loop Feedback History</h3>
+                <span class="count-tag green">{{ feedbacks|length }}</span>
+            </div>
+            <span class="badge-sub-info">Quality Loop Transmitted to Feeder PHCs</span>
+        </div>
+
+        <div class="feedback-stream-list">
+            {% for fb in feedbacks %}
+            <div class="feedback-card">
+                <div class="fb-card-header">
+                    <div>
+                        <span class="study-id-pill pill-blue">#{{ fb.study_id }}</span>
+                        <strong class="fb-patient-name">{{ fb.patient_name }}</strong>
+                        <span class="fb-refer-phc">&bull; Ref: {{ fb.referring_phc }}</span>
+                    </div>
+                    <span class="triage-badge {% if 'Critical' in fb.referral_appropriateness or 'Appropriate' in fb.referral_appropriateness %}green{% else %}yellow{% endif %}">
+                        {{ fb.referral_appropriateness }}
+                    </span>
+                </div>
+
+                <div class="fb-outcomes-strip">
+                    <div><strong>Stabilization:</strong> <span class="badge-stabilization">{{ fb.stabilization_quality }}</span></div>
+                    <div><strong>Maternal Outcome:</strong> {{ fb.maternal_outcome }}</div>
+                    <div><strong>Neonatal Outcome:</strong> {{ fb.neonatal_outcome }}</div>
+                </div>
+
+                <div class="fb-quote-box">
+                    <i class="fa-solid fa-quote-left"></i>
+                    <em>"{{ fb.feedback_notes }}"</em>
+                    <div class="fb-doctor-signature">
+                        — {{ fb.doctor_name }} ({{ fb.referral_facility }}) &bull; <small>{{ fb.submitted_at }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Specialist Outcome & Closed-Loop Feedback Modal -->
+<div id="feedback-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-feedback">
+        <div class="panel-header modal-feedback-header">
+            <div class="panel-header-left">
+                <h3><i class="fa-solid fa-notes-medical"></i> Specialist Delivery Outcome &amp; Closed-Loop Clinical Feedback</h3>
+                <span class="panel-header-sub">Send educational feedback back to the feeder PHC to prevent future maternal complications</span>
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeFeedbackModal();">&times;</button>
+        </div>
+
+        <div class="modal-feedback-meta">
+            <div><span class="meta-label">Patient:</span> <strong id="fb-patient-name">Mother</strong> (Study ID: <strong id="fb-study-id">#0000</strong>)</div>
+            <div><span class="meta-label">Referring Unit:</span> <strong id="fb-referring-phc" class="text-primary-blue">Feeder RH</strong></div>
+            <div><span class="meta-label">Transfer Reason:</span> <span id="fb-reason">Danger signs</span></div>
+        </div>
+
+        <form id="receiving-feedback-form" onsubmit="submitReceivingFeedback(event);">
+            <input type="hidden" id="fb-study-id-input" name="study_id">
+            <input type="hidden" id="fb-referral-facility-input" name="referral_facility" value="{{ selected_center if selected_center != 'ALL' else 'Designated Referral Center' }}">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Attending Consultant / Specialist <span class="req">*</span></label>
+                    <input type="text" name="doctor_name" value="{{ session.get('user', {}).get('full_name', 'Attending Obstetric Specialist') }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Maternal Arrival Condition <span class="req">*</span></label>
+                    <select name="arrival_condition" required>
+                        <option value="Stable with active labor">Stable with active labor</option>
+                        <option value="Severe Hypertension / Twitching">Severe Hypertension / Impending Eclampsia</option>
+                        <option value="Active Hemorrhage / Bleeding">Active Antepartum / Postpartum Bleeding</option>
+                        <option value="Exhausted / Obstructed Labor">Exhausted / Obstructed Labor</option>
+                        <option value="In Shock / Critical">In Shock / Critical Hypovolemia</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pre-Referral In-Transit Stabilization Quality <span class="req">*</span></label>
+                    <select name="stabilization_quality" required>
+                        <option value="Excellent - Proper 16G IV cannula, loading MgSO4 & catheter in situ">Excellent - Proper 16G IV cannula, loading MgSO4 & catheter in situ</option>
+                        <option value="Adequate - Basic vitals stabilized and IV line placed">Adequate - Basic vitals stabilized and IV line placed</option>
+                        <option value="Inadequate - IV cannula missing or dislodged in transit">Inadequate - IV cannula missing or dislodged in transit</option>
+                        <option value="Poor - Required immediate CPR / resuscitation on arrival">Poor - Required immediate resuscitation upon arrival</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Referral Decision Appropriateness Assessment <span class="req">*</span></label>
+                    <select name="referral_appropriateness" required>
+                        <option value="Critical Life-Saving">Critical Life-Saving (Prevented maternal/neonatal demise)</option>
+                        <option value="Appropriate & Timely">Appropriate &amp; Timely Referral</option>
+                        <option value="Delayed Referral from PHC">Delayed Referral from PHC (Should have transferred earlier)</option>
+                        <option value="Could have been managed at PHC">Unnecessary (Could have been delivered at primary unit)</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 class="section-divider-title">
+                <i class="fa-solid fa-baby-carriage"></i> Delivery &amp; Neonatal Status at Referral Center
+            </h4>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mode of Delivery <span class="req">*</span></label>
+                    <select name="delivery_mode" required>
+                        <option value="Normal Vaginal Delivery">Normal Vaginal Delivery</option>
+                        <option value="Emergency Lower Segment Caesarean (LSCS)">Emergency Caesarean (LSCS)</option>
+                        <option value="Assisted Forceps / Ventouse">Assisted Forceps / Ventouse</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Baby Birth Weight <span class="unit-tag">grams</span> <span class="req">*</span></label>
+                    <input type="number" name="baby_weight" value="2850" min="500" max="5500" required>
+                </div>
+                <div class="form-group">
+                    <label>Neonatal Status <span class="req">*</span></label>
+                    <select name="baby_status" required>
+                        <option value="Alive & Healthy">Alive &amp; Healthy (APGAR &ge; 8)</option>
+                        <option value="Admitted to SNCU/NICU">Admitted to SNCU/NICU</option>
+                        <option value="Fresh Stillbirth">Fresh Stillbirth</option>
+                        <option value="Macerated Stillbirth">Macerated Stillbirth</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Referred to SNCU? <span class="req">*</span></label>
+                    <select name="sncu_referred" required>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes (Respiratory Distress / Prematurity)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Maternal Recovery Summary <span class="req">*</span></label>
+                    <input type="text" name="maternal_outcome" value="Stable in postnatal HDU ward; vitals normalized." required>
+                </div>
+                <div class="form-group">
+                    <label>Neonatal Condition Summary <span class="req">*</span></label>
+                    <input type="text" name="neonatal_outcome" value="Vigorous, cried immediately at birth, normal APGAR." required>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.75rem;">
+                <label style="color: #0369a1; font-weight: 700;">
+                    <i class="fa-solid fa-envelope-open-text"></i> Closed-Loop Clinical Feedback to Referring PHC Doctors &amp; Nurses <span class="req">*</span>:
+                </label>
+                <textarea name="feedback_notes" rows="3" placeholder="Provide constructive clinical feedback on referral timing, pre-referral medication, and diagnostic findings to improve clinical learning at the grassroots PHC..." required></textarea>
+            </div>
+
+            <div class="modal-actions-bar">
+                <button type="button" class="btn btn-outline" onclick="closeFeedbackModal();">Cancel</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fa-solid fa-paper-plane"></i> Transmit Closed-Loop Feedback to PHC
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

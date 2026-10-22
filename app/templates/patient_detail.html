@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Patient #{{ patient.study_id }} - Continuous CDSS & Triage Timeline{% endblock %}
+
+{% block content %}
+<div class="cdss-title-header patient-detail-header">
+    <div class="cdss-title-left">
+        <div class="cdss-badge-pill">
+            <i class="fa-solid fa-hospital-user"></i> Longitudinal Patient Dossier
+        </div>
+        <h2>Patient #{{ patient.study_id }}: {{ patient.patient_name }}</h2>
+        <p>
+            Admitted at <strong>{{ patient.facility_name }}</strong> ({{ patient.block_name }}) &bull;
+            Matrima ID: <strong>{{ patient.matrima_id or 'N/A' }}</strong> &bull;
+            Age: <strong>{{ patient.age|round|int }} years</strong>
+        </p>
+    </div>
+    <div class="cdss-title-right">
+        <a href="{{ url_for('plhcu_view') }}" class="btn btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Back to Register
+        </a>
+        <button type="button" class="btn btn-primary" onclick="window.print();">
+            <i class="fa-solid fa-print"></i> Print Case Record
+        </button>
+    </div>
+</div>
+
+<!-- Current Status Banner -->
+<div class="status-summary-banner status-{{ patient.cdss_triage_level|lower }}">
+    <div class="status-banner-left">
+        <span class="triage-badge {{ patient.cdss_triage_level|lower }} badge-lg">
+            {{ patient.cdss_triage_level }} TRIAGE
+        </span>
+        <div class="status-banner-title">
+            <span>Latest Care Status:</span>
+            <strong>{{ patient.referral_status }}</strong>
+        </div>
+    </div>
+    <div class="status-banner-right">
+        <div class="status-stat-chip">
+            <span class="chip-label">AI Risk Score:</span>
+            <strong class="chip-val">{{ patient.cdss_risk_score }} / 100</strong>
+        </div>
+        <div class="status-stat-chip">
+            <span class="chip-label">Clinical Urgency:</span>
+            <strong class="chip-val">{{ patient.cdss_urgency }}</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Symmetrical Split Columns: Profile & Timeline (Left) vs Re-Assessment Form (Right) -->
+<div class="content-columns symmetric-split">
+    <!-- Left Column: Patient Profile & Continuous Assessment Timeline -->
+    <div class="split-col">
+        <!-- Profile Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <h3><i class="fa-solid fa-id-card-clip"></i> Antenatal &amp; Demographic Profile</h3>
+                    <span class="panel-header-sub">Baseline clinical characteristics on intake</span>
+                </div>
+            </div>
+            <div class="profile-vitals-grid">
+                <div class="v-card">
+                    <span class="v-lbl">Gravida / Parity</span>
+                    <strong class="v-val">G{{ patient.gravida }} P{{ patient.parity_live or 0 }}+{{ patient.parity_loss or 0 }}</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Gestational Age</span>
+                    <strong class="v-val">{{ patient.gestational_age }} Weeks</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Hemoglobin</span>
+                    <strong class="v-val {% if patient.hemoglobin < 11.0 %}text-red{% endif %}">{{ patient.hemoglobin }} g/dL</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Blood Pressure</span>
+                    <strong class="v-val">{{ patient.systolic_bp|round|int }}/{{ patient.diastolic_bp|round|int }} mmHg</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Fetal Heart Rate</span>
+                    <strong class="v-val">{{ patient.fetal_heart_rate|round|int }} bpm</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Membrane Status</span>
+                    <strong class="v-val">{% if patient.has_rom == 1 %}Ruptured (PROM){% else %}Intact{% endif %}</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Socioeconomic</span>
+                    <strong class="v-val">{{ patient.ses }} ({{ patient.caste }})</strong>
+                </div>
+                <div class="v-card">
+                    <span class="v-lbl">Contact Phone</span>
+                    <strong class="v-val">{{ patient.phone or 'Not recorded' }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continuous Triage Timeline -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <h3><i class="fa-solid fa-timeline"></i> Continuous CDSS Re-Assessment Timeline</h3>
+                    <span class="panel-header-sub">Longitudinal intrapartum surveillance track</span>
+                </div>
+            </div>
+
+            {% if timeline|length == 0 %}
+            <div class="empty-state-box">
+                <div class="empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <h4>Initial Admission Baseline Only</h4>
+                <p>Use the form on the right to perform serial re-assessments as labor progresses.</p>
+            </div>
+            {% else %}
+            <div class="clinical-timeline-stream">
+                {% for a in timeline %}
+                <div class="timeline-step">
+                    <div class="timeline-dot dot-{{ a.ai_triage_level|lower }}"></div>
+                    <div class="timeline-card">
+                        <div class="timeline-header">
+                            <span class="timeline-time"><i class="fa-regular fa-clock"></i> {{ a.assessment_time }} &bull; Stage: {{ a.stage_of_labor }}</span>
+                            <span class="triage-badge {{ a.ai_triage_level|lower }}">{{ a.ai_triage_level }}</span>
+                        </div>
+                        <div class="timeline-decision">
+                            <strong>AI Recommendation:</strong> <span>{{ a.ai_decision }}</span>
+                        </div>
+                        <div class="timeline-vitals-row">
+                            <span>BP: <strong>{{ a.systolic_bp|round|int }}/{{ a.diastolic_bp|round|int }}</strong></span>
+                            <span>Pulse: <strong>{{ a.pulse|round|int }}</strong> bpm</span>
+                            <span>FHR: <strong>{{ a.fetal_heart_rate|round|int }}</strong> bpm</span>
+                            <span>Dilatation: <strong>{{ a.cervical_dilatation or 'N/A' }}</strong> cm</span>
+                        </div>
+
+                        {% if a.doctor_decision == 'OVERRIDE' %}
+                        <div class="timeline-override-box">
+                            <div class="override-title"><i class="fa-solid fa-user-doctor"></i> Doctor Override Recorded:</div>
+                            <div>Action: <strong>{{ a.doctor_action }}</strong></div>
+                            <div>Reason: <em>{{ a.override_reason }}</em></div>
+                            <div class="override-by">— By {{ a.doctor_name }}</div>
+                        </div>
+                        {% else %}
+                        <div class="timeline-agree-note">
+                            <i class="fa-solid fa-circle-check"></i> Attending Doctor agreed with AI algorithmic triage guidance.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Re-Assessment & Doctor Override Form -->
+    <div class="split-col">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <h3><i class="fa-solid fa-arrows-rotate"></i> Re-Assess Triage (Doctor / Nurse)</h3>
+                    <span class="panel-header-sub">Execute serial intrapartum algorithmic scoring</span>
+                </div>
+                <span class="badge badge-orange"><i class="fa-solid fa-bed-pulse"></i> Bedside Re-Check</span>
+            </div>
+
+            <!-- Live Calculation Box for Re-assessment -->
+            <div id="reassess-alert-box" class="cdss-alert-box {{ patient.cdss_triage_level|lower }}">
+                <div class="cdss-header">
+                    <span id="reassess-title-text" class="cdss-title">{{ patient.cdss_urgency }}</span>
+                    <span id="reassess-triage-badge" class="triage-badge {{ patient.cdss_triage_level|lower }}">{{ patient.cdss_triage_level }} TRIAGE</span>
+                </div>
+                <div id="reassess-ai-decision-banner" class="ai-hero-decision {{ patient.cdss_triage_level|lower }}">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>AI DECISION: {% if patient.cdss_triage_level == 'RED' %}REFER IMMEDIATELY{% elif patient.cdss_triage_level == 'YELLOW' %}SENIOR VIGILANCE / PLANNED TRANSFER{% else %}DO NOT REFER (SAFE FOR PLHCU){% endif %}</span>
+                </div>
+                <div id="reassess-pulse-box" class="pulse-box" style="display: none;">
+                    <span class="pulse-dot"></span>
+                    <span id="reassess-pulse-text">Maternal Pulse Normal</span>
+                </div>
+                <ul id="reassess-triggers-list" class="trigger-list">
+                    <li class="trigger-item normal">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>{{ patient.cdss_triggers or 'No acute danger signs detected.' }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <form id="reassess-form" method="POST" action="{{ url_for('submit_patient_reassessment', study_id=patient.study_id) }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Stage of Labour <span class="req">*</span></label>
+                        <select name="stage_of_labor" required>
+                            <option value="Active Labour (First Stage)">Active Labour (First Stage)</option>
+                            <option value="Second Stage (Full Dilatation)">Second Stage (Full Dilatation)</option>
+                            <option value="Latent Phase">Latent Phase</option>
+                            <option value="Postpartum 3rd Stage">Postpartum 3rd Stage</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cervical Dilatation <span class="unit-tag">cm</span> <span class="req">*</span></label>
+                        <input type="number" name="cervical_dilatation" value="{{ patient.cervical_dilatation or 4 }}" min="0" max="10" step="0.5" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Systolic BP <span class="unit-tag">mmHg</span> <span class="req">*</span></label>
+                        <input type="number" id="reassess-sbp" name="systolic_bp" value="{{ patient.systolic_bp|round|int }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Diastolic BP <span class="unit-tag">mmHg</span> <span class="req">*</span></label>
+                        <input type="number" id="reassess-dbp" name="diastolic_bp" value="{{ patient.diastolic_bp|round|int }}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            Maternal Pulse <span class="unit-tag">bpm</span> <span class="req">*</span>
+                            <span id="pulse-badge-ui" class="triage-badge green" style="font-size: 0.68rem; margin-left: 4px;">Normal</span>
+                        </label>
+                        <input type="number" id="reassess-pulse" name="pulse" value="80" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fetal Heart Rate <span class="unit-tag">bpm</span> <span class="req">*</span></label>
+                        <input type="number" id="reassess-fhr" name="fetal_heart_rate" value="{{ patient.fetal_heart_rate|round|int }}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hemoglobin <span class="unit-tag">g/dL</span> <span class="req">*</span></label>
+                        <input type="number" id="reassess-hb" name="hemoglobin" value="{{ patient.hemoglobin }}" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gestational Age <span class="unit-tag">wks</span> <span class="req">*</span></label>
+                        <input type="number" id="reassess-ga" name="gestational_age" value="{{ patient.gestational_age }}" step="0.5" required>
+                    </div>
+                </div>
+
+                <div class="form-group-checkbox" style="margin: 0.85rem 0;">
+                    <input type="checkbox" id="reassess-rom" name="has_rom" value="1" {% if patient.has_rom == 1 %}checked{% endif %}>
+                    <label for="reassess-rom">Active Amniotic Fluid Dribbling / Rupture of Membranes (PROM)</label>
+                </div>
+
+                <!-- Doctor Decision & Override Section -->
+                <div class="doctor-eval-block">
+                    <label class="eval-section-label">
+                        <i class="fa-solid fa-user-doctor"></i> Attending Doctor Clinical Decision:
+                    </label>
+
+                    <div class="eval-radio-strip">
+                        <label class="eval-radio-opt agree">
+                            <input type="radio" name="doctor_decision" value="AGREE" checked onchange="toggleOverrideBox(false);">
+                            <div class="eval-opt-text">
+                                <strong>Agree with AI Triage</strong>
+                                <small>Confirm algorithmic plan</small>
+                            </div>
+                        </label>
+                        <label class="eval-radio-opt override">
+                            <input type="radio" name="doctor_decision" value="OVERRIDE" onchange="toggleOverrideBox(true);">
+                            <div class="eval-opt-text">
+                                <strong>Override AI Triage</strong>
+                                <small>Clinical override</small>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Hidden Override Box -->
+                    <div id="override-details-box" class="contradiction-box" style="display: none; margin-top: 0.85rem;">
+                        <div class="form-group">
+                            <label>Primary Reason for Contradicting AI Decision:</label>
+                            <select name="override_reason_category">
+                                <option value="Rapid Labor Progression (Imminent crowning, delivery at PHC safer than in transit)">Rapid Labor Progression (Crowning, unsafe to transfer in ambulance)</option>
+                                <option value="Maternal Vitals Stabilized after initial loading/antihypertensive therapy">Maternal Vitals Stabilized after medical therapy</option>
+                                <option value="Clinical internal exam confirms adequate pelvic dimensions & low presenting part">Clinical internal exam confirms adequate pelvis &amp; descent</option>
+                                <option value="Patient / Family refused inter-hospital referral despite counseling">Patient / Family refused referral despite explanation</option>
+                                <option value="Extreme emergency transfer indicated by uncaptured bedside clinical sign">Bedside clinical sign demands immediate transfer (AI was too conservative)</option>
+                                <option value="Ambulance unavailable / Road blocked due to weather">Logistical emergency (Ambulance delay / Road block)</option>
+                                <option value="Other Clinical Judgment">Other Clinical Judgment</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Doctor's Explicit Clinical Justification &amp; Commentary:</label>
+                            <textarea name="override_notes" rows="2" placeholder="Detail clinical rationale for audit trail and district review..."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Doctor's Final Enforced Action:</label>
+                            <select name="doctor_action">
+                                <option value="DELIVER_AT_PHC">Deliver at Primary Health Center (Safe trial of labor)</option>
+                                <option value="URGENT_REFERRAL">Execute Immediate Emergency Referral to SDH/DH</option>
+                                <option value="OBSERVE_2_HOURS">Observe for 2 Hours with repeat partograph</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Serial Assessment &amp; Update Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleOverrideBox(show) {
+    const box = document.getElementById("override-details-box");
+    if (box) box.style.display = show ? "block" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const inputs = ["reassess-sbp", "reassess-dbp", "reassess-pulse", "reassess-fhr", "reassess-hb", "reassess-ga", "reassess-rom"];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", updateReassessCDSS);
+            el.addEventListener("change", updateReassessCDSS);
+        }
+    });
+});
+
+async function updateReassessCDSS() {
+    const sbp = parseFloat(document.getElementById("reassess-sbp")?.value) || 120;
+    const dbp = parseFloat(document.getElementById("reassess-dbp")?.value) || 80;
+    const pulse = parseFloat(document.getElementById("reassess-pulse")?.value) || 80;
+    const fhr = parseFloat(document.getElementById("reassess-fhr")?.value) || 140;
+    const hb = parseFloat(document.getElementById("reassess-hb")?.value) || 11.0;
+    const ga = parseFloat(document.getElementById("reassess-ga")?.value) || 39.0;
+    const rom = document.getElementById("reassess-rom")?.checked ? 1 : 0;
+
+    const pBadge = document.getElementById("pulse-badge-ui");
+    if (pBadge) {
+        if (pulse >= 100) {
+            pBadge.className = "triage-badge red pulse-animate";
+            pBadge.textContent = "Tachycardia (" + pulse + " bpm)";
+        } else if (pulse < 60) {
+            pBadge.className = "triage-badge yellow";
+            pBadge.textContent = "Bradycardia (" + pulse + " bpm)";
+        } else {
+            pBadge.className = "triage-badge green";
+            pBadge.textContent = "Normal (" + pulse + " bpm)";
+        }
+    }
+
+    try {
+        const res = await fetch("/api/cdss/evaluate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                systolic_bp: sbp,
+                diastolic_bp: dbp,
+                pulse: pulse,
+                fetal_heart_rate: fhr,
+                hemoglobin: hb,
+                gestational_age: ga,
+                has_rom: rom
+            })
+        });
+        const d = await res.json();
+        
+        const box = document.getElementById("reassess-alert-box");
+        const bBadge = document.getElementById("reassess-triage-badge");
+        const banner = document.getElementById("reassess-ai-decision-banner");
+        const title = document.getElementById("reassess-title-text");
+        const triggers = document.getElementById("reassess-triggers-list");
+
+        if (box) box.className = "cdss-alert-box " + d.triage_level.toLowerCase();
+        if (bBadge) {
+            bBadge.className = "triage-badge " + d.triage_level.toLowerCase();
+            bBadge.textContent = d.triage_level + " TRIAGE";
+        }
+        if (title) title.textContent = d.urgency;
+        if (banner) {
+            banner.className = "ai-hero-decision " + d.triage_level.toLowerCase();
+            banner.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>AI DECISION: ${d.ai_decision}</span>`;
+        }
+
+        if (triggers) {
+            triggers.innerHTML = "";
+            if (d.triggers && d.triggers.length > 0) {
+                d.triggers.forEach(t => {
+                    triggers.innerHTML += `<li class="trigger-item ${t.severity.toLowerCase()}"><i class="fa-solid fa-triangle-exclamation"></i> <strong>[${t.severity}] ${t.title}:</strong> ${t.action}</li>`;
+                });
+            } else {
+                triggers.innerHTML = `<li class="trigger-item normal"><i class="fa-solid fa-circle-check"></i> No acute danger signs detected. Safe for PLHCU care.</li>`;
+            }
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+</script>
+{% endblock %}
