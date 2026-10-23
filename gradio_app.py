@@ -94,7 +94,9 @@ def check_sections_readiness(
     ga, grav, hb, urine, plac, afi
 ):
     s1 = bool(name and str(name).strip() and age is not None and sbp is not None and dbp is not None and pulse is not None and temp is not None and stage)
-    s2 = bool(fhr is not None and lie and cdil is not None and eff is not None and station and rom and liquor)
+    rom_is_ruptured = bool(rom and ("Ruptured" in str(rom) or rom == "Yes" or rom == 1 or rom == "1"))
+    liquor_valid = bool(liquor) if rom_is_ruptured else True
+    s2 = bool(fhr is not None and lie and cdil is not None and eff is not None and station and rom and liquor_valid)
     s3 = bool(ga is not None and grav is not None and hb is not None and urine and plac and afi)
     count = (1 if s1 else 0) + (1 if s2 else 0) + (1 if s3 else 0)
     
@@ -150,7 +152,7 @@ def save_maternal_intake(
         "effacement": eff_f,
         "station": station or "0",
         "has_rom": 1 if (rom and "Ruptured" in str(rom)) else 0,
-        "liquor_color": liquor or "Clear",
+        "liquor_color": (liquor or "Clear") if (rom and "Ruptured" in str(rom)) else "Clear",
         "gestational_age": ga_f,
         "gravida": grav_i,
         "parity_live": plive_i,
@@ -208,7 +210,7 @@ def run_triage_evaluation(
         "presentation_lie": lie or "Vertex/Cephalic",
         "presentation": lie or "Vertex/Cephalic",
         "has_rom": 1 if (rom == "Yes" or (rom and "Ruptured" in str(rom))) else 0,
-        "liquor_color": liquor or "Clear",
+        "liquor_color": (liquor or "Clear") if (rom and ("Ruptured" in str(rom) or rom == "Yes")) else "Clear",
         "urine_albumin": urine_alb or "Nil",
         "blood_sugar": float(blood_sugar or 95) if isinstance(blood_sugar, (int, float)) else 95,
         "usg_placenta": usg_placenta or "Normal",

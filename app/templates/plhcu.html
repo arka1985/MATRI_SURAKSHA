@@ -198,7 +198,7 @@
                         </div>
                         <div class="form-group">
                             <label for="has_rom">Membrane Status <span class="req">*</span></label>
-                            <select id="has_rom" name="has_rom" required>
+                            <select id="has_rom" name="has_rom" onchange="handleMembraneStatusChange();" required>
                                 <option value="" disabled selected>-- Select Membrane --</option>
                                 <option value="0">Intact Membranes</option>
                                 <option value="1">Ruptured Membranes (Active PROM)</option>
@@ -206,10 +206,10 @@
                         </div>
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-row" id="liquor_color_row" style="display: none;">
                         <div class="form-group full-width-field">
                             <label for="liquor_color">Liquor / Amniotic Fluid Color <span class="req">*</span></label>
-                            <select id="liquor_color" name="liquor_color" required>
+                            <select id="liquor_color" name="liquor_color">
                                 <option value="" disabled selected>-- Select Liquor Color --</option>
                                 <option value="Clear">Clear / Physiological</option>
                                 <option value="Thin Meconium (Grade 1)">Thin Meconium-Stained Liquor (Grade 1)</option>

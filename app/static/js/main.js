@@ -31,6 +31,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("btn-next-step-2")?.addEventListener("click", () => nextClinicalTab("tab-exam"));
         document.getElementById("btn-next-step-3")?.addEventListener("click", () => nextClinicalTab("tab-antenatal"));
 
+        // Membrane status change listener
+        document.getElementById("has_rom")?.addEventListener("change", handleMembraneStatusChange);
+        handleMembraneStatusChange();
+
         // Initial validation check
         checkSectionCompletion();
     }
@@ -233,6 +237,7 @@ function loadClinicalPreset(type) {
 
     // Trigger validation and update UI
     isMaternalSaved = false;
+    handleMembraneStatusChange();
     checkSectionCompletion();
 }
 
@@ -293,6 +298,10 @@ function checkSectionCompletion() {
     const romVal = document.getElementById("has_rom")?.value || "";
     const liquorVal = document.getElementById("liquor_color")?.value || "";
 
+    // If membrane is intact (0), liquor color is NOT required.
+    // If membrane is ruptured (1), liquor color IS required.
+    const liquorValid = (romVal === "0") || (romVal === "1" && liquorVal !== "");
+
     const sec2Complete = Boolean(
         !isNaN(fhrVal) && fhrVal > 40 &&
         presVal !== "" &&
@@ -300,7 +309,7 @@ function checkSectionCompletion() {
         effaceVal !== "" && !isNaN(parseFloat(effaceVal)) &&
         stationVal !== "" &&
         romVal !== "" &&
-        liquorVal !== ""
+        liquorValid
     );
 
     // SECTION 3: Antenatal Profile & Diagnostics
@@ -558,7 +567,7 @@ function collectFormData() {
         station: document.getElementById("station")?.value || "0",
         presentation: document.getElementById("presentation")?.value || "Vertex/Cephalic",
         has_rom: document.getElementById("has_rom")?.value || "0",
-        liquor_color: document.getElementById("liquor_color")?.value || "Clear",
+        liquor_color: (document.getElementById("has_rom")?.value === "1") ? (document.getElementById("liquor_color")?.value || "Clear") : "Clear",
         gravida: parseInt(document.getElementById("gravida")?.value) || 1,
         parity_live: parseInt(document.getElementById("parity_live")?.value) || 0,
         parity_loss: parseInt(document.getElementById("parity_loss")?.value) || 0,
@@ -770,6 +779,34 @@ function triggerQuickReferralSlip() {
     const patientName = document.getElementById("patient_name")?.value || "Mother";
     const triggers = document.getElementById("cdss-triggers-list")?.innerText || "High-risk intrapartum danger signs detected";
     openReferralModal(studyId, patientName, "RED", triggers);
+}
+
+// -------------------------------------------------------------
+// Clinical Dynamic Field Visibility Handlers
+// -------------------------------------------------------------
+function handleMembraneStatusChange() {
+    const romSelect = document.getElementById("has_rom");
+    const liquorRow = document.getElementById("liquor_color_row");
+    const liquorSelect = document.getElementById("liquor_color");
+    if (!romSelect) return;
+
+    if (romSelect.value === "1") {
+        // Ruptured Membranes: Liquor color is required
+        if (liquorRow) liquorRow.style.display = "grid";
+        if (liquorSelect) {
+            liquorSelect.setAttribute("required", "required");
+        }
+    } else {
+        // Intact Membranes (0) or Unselected: Liquor color is NOT required
+        if (liquorRow) liquorRow.style.display = "none";
+        if (liquorSelect) {
+            liquorSelect.removeAttribute("required");
+            if (romSelect.value === "0") {
+                liquorSelect.value = "Clear";
+            }
+        }
+    }
+    checkSectionCompletion();
 }
 
 // -------------------------------------------------------------
