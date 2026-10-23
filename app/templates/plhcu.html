@@ -45,7 +45,7 @@
             <!-- Stepper Progress Tracker -->
             <div class="section-tracker-bar">
                 <div class="tracker-header">
-                    <span class="tracker-title"><i class="fa-solid fa-list-check"></i> Clinical Intake Stepper</span>
+                    <span class="tracker-title"><i class="fa-solid fa-clipboard-user"></i> Clinical Information</span>
                     <span id="tracker-count" class="tracker-badge-incomplete">
                         <i class="fa-solid fa-circle-notch"></i> 0 / 3 Complete
                     </span>
@@ -122,7 +122,6 @@
                         <div class="form-group">
                             <label for="pulse">
                                 Maternal Pulse <span class="req">*</span> <span class="unit-tag">bpm</span>
-                                <span id="pulse-badge-ui" class="triage-badge neutral pulse-sub-badge">Pending</span>
                             </label>
                             <input type="number" id="pulse" name="pulse" placeholder="e.g. 78 (Norm: 60-99)" min="35" max="220" required>
                         </div>
@@ -150,7 +149,7 @@
                     </div>
 
                     <div class="tab-step-nav right-align">
-                        <button type="button" class="btn btn-step-next" onclick="nextClinicalTab('tab-exam');">
+                        <button type="button" id="btn-next-step-2" class="btn btn-step-next" onclick="nextClinicalTab('tab-exam');">
                             <span>Step 2: Vaginal Exam &amp; Fetus</span> <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
@@ -224,7 +223,7 @@
                         <button type="button" class="btn btn-step-prev" onclick="prevClinicalTab('tab-vitals');">
                             <i class="fa-solid fa-arrow-left"></i> <span>Back: Vitals</span>
                         </button>
-                        <button type="button" class="btn btn-step-next" onclick="nextClinicalTab('tab-antenatal');">
+                        <button type="button" id="btn-next-step-3" class="btn btn-step-next" onclick="nextClinicalTab('tab-antenatal');">
                             <span>Step 3: Antenatal &amp; Labs</span> <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>

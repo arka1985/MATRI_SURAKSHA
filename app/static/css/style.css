@@ -886,6 +886,37 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateX(-2px);
 }
 
+.btn-step-next.btn-step-ready {
+    background: linear-gradient(135deg, var(--orange-600) 0%, var(--orange-500) 100%) !important;
+    color: #ffffff !important;
+    border-color: var(--orange-700) !important;
+    box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+    font-weight: 800 !important;
+    animation: pulseStepBtn 2s infinite ease-in-out;
+}
+
+.btn-step-next.btn-step-ready:hover {
+    background: linear-gradient(135deg, var(--orange-700) 0%, var(--orange-600) 100%) !important;
+    transform: translateX(3px) !important;
+    box-shadow: 0 6px 16px rgba(234, 88, 12, 0.45) !important;
+}
+
+@keyframes pulseStepBtn {
+    0%, 100% {
+        box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.18), 0 4px 14px rgba(234, 88, 12, 0.35);
+    }
+}
+
+.tracker-pill.pill-ready {
+    border-color: var(--orange-500);
+    background: #fff7ed;
+    color: var(--orange-800);
+    font-weight: 800;
+}
+
 /* Dual Intake Action Buttons */
 .intake-actions-dual {
     display: flex;

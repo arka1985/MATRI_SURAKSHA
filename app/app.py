@@ -3,7 +3,7 @@ MatriSuraksha - Role-Based Web Application Server & Continuous CDSS
 Supports:
 1. Module 1: First Admitted Hospital (PLHCU / PHC / Rural Hospital)
 2. Module 2: Referred Hospital (SDH / DH) & Closed-Loop Clinical Feedback
-3. Module 3: Chief Medical Officer of Health (CMOH) District Executive Dashboard
+3. Module 3: Chief Medical Officer of Health (CMOH) Dashboard
 4. Security Layer: User ID & Password authentication for protected patient data
 5. Continuous CDSS Re-Assessment Timeline & Doctor Override Tracking
 6. Browser Extension (.zip) Download
@@ -249,7 +249,7 @@ def referral_view():
 
 
 # -------------------------------------------------------------
-# Module 3: CMOH District Executive Dashboard
+# Module 3: CMOH Dashboard
 # -------------------------------------------------------------
 @app.route("/cmoh")
 def cmoh_view():

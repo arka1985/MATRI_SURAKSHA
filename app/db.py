@@ -176,6 +176,23 @@ def init_db(seed_from_csv=False):
     for u in default_users:
         cur.execute("INSERT OR REPLACE INTO users (username, password, full_name, role, facility) VALUES (?,?,?,?,?)", u)
 
+    # Pre-seed standard Dakshin Dinajpur health facilities if empty
+    cur.execute("SELECT COUNT(*) FROM facilities")
+    if cur.fetchone()[0] == 0:
+        now_ts = datetime.now().isoformat()
+        default_facilities = [
+            ("Harirampur RH", "PLHCU", "Harirampur", now_ts),
+            ("Kushmandi RH", "PLHCU", "Kushmandi", now_ts),
+            ("Banshihari RH", "PLHCU", "Banshihari", now_ts),
+            ("Tapan RH", "PLHCU", "Tapan", now_ts),
+            ("Kumarganj RH", "PLHCU", "Kumarganj", now_ts),
+            ("Hili RH", "PLHCU", "Hili", now_ts),
+            ("Gangarampur Sub-Divisional Hospital (SDH)", "REFERRAL_CENTER", "Gangarampur", now_ts),
+            ("Balurghat District Hospital (DH)", "REFERRAL_CENTER", "Balurghat", now_ts),
+            ("Malda Medical College & Hospital (MCH)", "REFERRAL_CENTER", "English Bazar", now_ts),
+        ]
+        cur.executemany("INSERT OR IGNORE INTO facilities (facility_name, facility_type, block_name, created_at) VALUES (?,?,?,?)", default_facilities)
+
     conn.commit()
 
     # Seed data if empty

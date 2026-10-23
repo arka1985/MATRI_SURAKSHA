@@ -27,6 +27,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+        // Explicit click listeners for Step navigation buttons
+        document.getElementById("btn-next-step-2")?.addEventListener("click", () => nextClinicalTab("tab-exam"));
+        document.getElementById("btn-next-step-3")?.addEventListener("click", () => nextClinicalTab("tab-antenatal"));
+
         // Initial validation check
         checkSectionCompletion();
     }
@@ -83,9 +87,18 @@ function switchClinicalTab(tabId) {
         target.style.display = "block";
     }
 
-    if (tabId === 'tab-vitals') document.getElementById('pill-sec-1')?.classList.add('active');
-    else if (tabId === 'tab-exam') document.getElementById('pill-sec-2')?.classList.add('active');
-    else if (tabId === 'tab-antenatal') document.getElementById('pill-sec-3')?.classList.add('active');
+    if (tabId === 'tab-vitals') {
+        document.getElementById('pill-sec-1')?.classList.add('active');
+    } else if (tabId === 'tab-exam') {
+        document.getElementById('pill-sec-2')?.classList.add('active');
+    } else if (tabId === 'tab-antenatal') {
+        document.getElementById('pill-sec-3')?.classList.add('active');
+    }
+
+    const form = document.getElementById("cdss-intake-form");
+    if (form) {
+        form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
 }
 
 function nextClinicalTab(tabId) {
@@ -238,7 +251,7 @@ function checkSectionCompletion() {
 
     const facSel = document.getElementById("primary_unit_select")?.value;
     const facCust = document.getElementById("primary_unit_custom")?.value.trim() || "";
-    const facValid = (facSel && facSel !== "__ADD_NEW__") || facCust.length > 0;
+    const facValid = (facSel && facSel !== "__ADD_NEW__") || facCust.length > 0 || (document.getElementById("primary_unit_select")?.options?.length > 1);
 
     const sec1Complete = Boolean(
         facValid &&
@@ -251,7 +264,7 @@ function checkSectionCompletion() {
         stageVal !== ""
     );
 
-    // Pulse Badge Live Indicator
+    // Pulse Badge Live Indicator (if present in DOM)
     const pBadge = document.getElementById("pulse-badge-ui");
     if (pBadge) {
         if (!isNaN(pulseVal) && pulseVal > 0) {
@@ -311,6 +324,27 @@ function checkSectionCompletion() {
     updatePillStatus("pill-sec-1", sec1Complete, "1", "Vitals & Labor");
     updatePillStatus("pill-sec-2", sec2Complete, "2", "Exam & Fetus");
     updatePillStatus("pill-sec-3", sec3Complete, "3", "Antenatal & Labs");
+
+    // Activate Step 2 & Step 3 Navigation Buttons and Ready Pills
+    const btnNext2 = document.getElementById("btn-next-step-2");
+    const pill2 = document.getElementById("pill-sec-2");
+    if (sec1Complete) {
+        btnNext2?.classList.add("btn-step-ready");
+        pill2?.classList.add("pill-ready");
+    } else {
+        btnNext2?.classList.remove("btn-step-ready");
+        pill2?.classList.remove("pill-ready");
+    }
+
+    const btnNext3 = document.getElementById("btn-next-step-3");
+    const pill3 = document.getElementById("pill-sec-3");
+    if (sec2Complete) {
+        btnNext3?.classList.add("btn-step-ready");
+        pill3?.classList.add("pill-ready");
+    } else {
+        btnNext3?.classList.remove("btn-step-ready");
+        pill3?.classList.remove("pill-ready");
+    }
 
     // Update Progress Badge
     const completedCount = (sec1Complete ? 1 : 0) + (sec2Complete ? 1 : 0) + (sec3Complete ? 1 : 0);
@@ -882,7 +916,6 @@ function openFeedbackModal(studyId, patientName, referringPhc, reason, refFacili
     if (facInput && refFacility) facInput.value = refFacility;
 
     modal.style.display = "flex";
-}
 }
 
 function closeFeedbackModal() {
