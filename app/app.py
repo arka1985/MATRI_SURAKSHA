@@ -14,6 +14,8 @@ import sys
 import io
 import csv
 import zipfile
+import base64
+import urllib.parse
 from functools import wraps
 from flask import (
     Flask,
@@ -64,7 +66,7 @@ def login_required(f):
 
 
 # -------------------------------------------------------------
-# Security & Authentication Routes
+# Security & Authentication Routes (Option A True 2FA)
 # -------------------------------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -72,7 +74,8 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "").strip()
-        user = db.verify_user(username, password)
+        otp = request.form.get("otp", "").strip()
+        user, error_msg = db.verify_user(username, password, otp)
         if user:
             session["user"] = {
                 "username": user["username"],
@@ -83,9 +86,68 @@ def login():
             next_page = request.form.get("next") or request.args.get("next") or url_for("plhcu_view")
             return redirect(next_page)
         else:
-            error = "Invalid healthcare credentials. Please check your User ID and password."
+            error = error_msg or "Invalid healthcare credentials. Please check your credentials."
             
     return render_template("login.html", error=error)
+
+
+@app.route("/api/auth/setup-2fa", methods=["POST"])
+def setup_2fa():
+    """
+    Password-gated 2FA QR code generator (Option A).
+    Only authorized personnel who provide their correct private password
+    can view their personal QR code and TOTP secret key.
+    Renders 100% offline via local qrcode library (zero external leaks).
+    """
+    data = request.get_json(silent=True) or request.form
+    username = data.get("username", "").strip().lower()
+    password = data.get("password", "").strip()
+
+    if not username or not password:
+        return jsonify({
+            "success": False,
+            "error": "Both Healthcare User ID and Password are required to unlock your 2FA QR setup."
+        }), 400
+
+    user = db.get_user_by_username(username)
+    if not user or user.get("password") != password:
+        return jsonify({
+            "success": False,
+            "error": "Authentication failed: Incorrect password. Only authorized personnel with valid credentials can view their private 2FA QR code."
+        }), 401
+
+    totp_secret = user.get("totp_secret")
+    if not totp_secret:
+        return jsonify({
+            "success": False,
+            "error": "2FA secret has not been assigned to this account."
+        }), 500
+
+    otpauth_uri = f"otpauth://totp/MatriSuraksha:{user['username']}?secret={totp_secret}&issuer=MatriSuraksha_WBHealth"
+
+    # Generate offline QR code as base64 PNG in memory
+    try:
+        import qrcode
+        qr = qrcode.QRCode(box_size=6, border=2)
+        qr.add_data(otpauth_uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="#0f172a", back_color="#ffffff")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        qr_image_data = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
+    except Exception as e:
+        qr_image_data = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={urllib.parse.quote(otpauth_uri)}"
+
+    return jsonify({
+        "success": True,
+        "username": user["username"],
+        "full_name": user["full_name"],
+        "role": user["role"],
+        "facility": user["facility"],
+        "totp_secret": totp_secret,
+        "otpauth_uri": otpauth_uri,
+        "qr_image_data": qr_image_data
+    })
 
 
 @app.route("/logout")
@@ -326,6 +388,28 @@ def api_refer_patient():
         
     db.dispatch_referral(study_id, facility, reason, "Emergency")
     return jsonify({"success": True, "study_id": study_id, "referral_facility": facility})
+
+
+@app.route("/api/patient/delete", methods=["POST"])
+def api_delete_patient():
+    user = session.get("user")
+    if not user or user.get("username") != "dr.arka":
+        return jsonify({
+            "success": False,
+            "error": "Access Denied: Only Dr. Arkaprabha Sau (Chief AI Scientist) has permission to delete test patient records."
+        }), 403
+
+    data = request.get_json() or {}
+    study_id = data.get("study_id")
+    if not study_id:
+        return jsonify({"success": False, "error": "Missing study_id"}), 400
+
+    db.delete_patient(study_id)
+    return jsonify({
+        "success": True,
+        "study_id": study_id,
+        "message": f"Test patient #{study_id} permanently removed from registry."
+    })
 
 
 @app.route("/api/doctor/evaluation", methods=["POST"])

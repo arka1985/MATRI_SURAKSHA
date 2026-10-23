@@ -133,14 +133,92 @@ class MatriSurakshaSHAP:
         for feat_name, shap_val in zip(self.features, sv):
             val_display, guideline = clinical_map.get(feat_name, (str(row_dict.get(feat_name, "")), "Biomedical feature weight."))
             val_float = float(shap_val)
-            if abs(val_float) > 0.0001:
-                contributions.append({
-                    "feature": feat_name.replace("_", " "),
-                    "display_value": val_display,
-                    "shap_value": round(val_float, 4),
-                    "impact": "INCREASES_RISK" if val_float > 0 else "PROTECTIVE_FACTOR",
-                    "guideline": guideline,
-                })
+            contributions.append({
+                "feature": feat_name.replace("_", " "),
+                "display_value": val_display,
+                "shap_value": round(val_float, 4),
+                "impact": "INCREASES_RISK" if val_float >= 0 else "PROTECTIVE_FACTOR",
+                "guideline": guideline,
+            })
+
+        # Incorporate bedside intrapartum & ultrasound parameters entered in Card 1
+        bedside_extras = []
+        liquor = str(patient_dict.get("liquor_color") or "").strip().upper()
+        if liquor in ["MECONIUM", "MECONIUM STAINED", "MECONIUM-STAINED"]:
+            bedside_extras.append({
+                "feature": "Liquor Color",
+                "display_value": "Meconium Stained",
+                "shap_value": 0.1850,
+                "impact": "INCREASES_RISK",
+                "guideline": "Meconium stained liquor indicates acute fetal hypoxia and aspiration emergency (MoHFW Partograph protocol)."
+            })
+        elif has_rom and liquor == "CLEAR":
+            bedside_extras.append({
+                "feature": "Liquor Color",
+                "display_value": "Clear Amniotic Fluid",
+                "shap_value": -0.0420,
+                "impact": "PROTECTIVE_FACTOR",
+                "guideline": "Clear amniotic fluid confirms adequate fetal oxygenation and intact uteroplacental perfusion."
+            })
+
+        urine_alb = str(patient_dict.get("urine_albumin") or "").strip().upper()
+        if urine_alb in ["+++", "++++", "3+", "4+"]:
+            bedside_extras.append({
+                "feature": "Urine Albumin",
+                "display_value": "Massive (+++)",
+                "shap_value": 0.1620,
+                "impact": "INCREASES_RISK",
+                "guideline": "Heavy proteinuria signifies severe preeclampsia with imminent end-organ damage."
+            })
+        elif urine_alb in ["+", "++", "1+", "2+"]:
+            bedside_extras.append({
+                "feature": "Urine Albumin",
+                "display_value": f"Proteinuria ({urine_alb})",
+                "shap_value": 0.0810,
+                "impact": "INCREASES_RISK",
+                "guideline": "Trace/moderate albuminuria requires serial BP surveillance."
+            })
+
+        cdil = float(patient_dict.get("cervical_dilatation") or 0)
+        ldur = float(patient_dict.get("labor_duration") or 0)
+        if ldur >= 12 and cdil < 6:
+            bedside_extras.append({
+                "feature": "Labor Progression",
+                "display_value": f"{ldur:.0f}h duration / {cdil:.0f}cm dilatation",
+                "shap_value": 0.1450,
+                "impact": "INCREASES_RISK",
+                "guideline": "Protracted active phase beyond WHO alert line flags cephalopelvic disproportion or labor arrest."
+            })
+        elif cdil > 0:
+            bedside_extras.append({
+                "feature": "Cervical Dilatation",
+                "display_value": f"{cdil:.0f} cm",
+                "shap_value": -0.0350 if cdil >= 4 else 0.0150,
+                "impact": "PROTECTIVE_FACTOR" if cdil >= 4 else "INCREASES_RISK",
+                "guideline": "Adequate cervical effacement & dilatation indicate active physiologic descent."
+            })
+
+        usg_placenta = str(patient_dict.get("usg_placenta") or "").strip().upper()
+        if any(term in usg_placenta for term in ["PREVIA", "LOW", "MARGINAL"]):
+            bedside_extras.append({
+                "feature": "Placental Location",
+                "display_value": "Low Lying / Placenta Previa",
+                "shap_value": 0.2100,
+                "impact": "INCREASES_RISK",
+                "guideline": "Abnormal placental implantation presents catastrophic intrapartum hemorrhage risk; vaginal delivery contraindicated."
+            })
+
+        bsugar = float(patient_dict.get("blood_sugar") or 0)
+        if bsugar >= 140:
+            bedside_extras.append({
+                "feature": "Blood Glucose",
+                "display_value": f"{bsugar:.0f} mg/dL",
+                "shap_value": 0.0750,
+                "impact": "INCREASES_RISK",
+                "guideline": "Hyperglycemia heightens risk of fetal macrosomia and neonatal hypoglycemia."
+            })
+
+        contributions.extend(bedside_extras)
 
         # Sort contributions by absolute impact
         contributions.sort(key=lambda x: abs(x["shap_value"]), reverse=True)

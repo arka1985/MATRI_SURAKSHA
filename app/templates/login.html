@@ -23,21 +23,32 @@
         </div>
         {% endif %}
 
+        <!-- Option A: True 2FA Dual-Factor Login Form -->
         <form method="POST" action="{{ url_for('login') }}" class="login-form">
             <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
 
             <div class="form-group">
                 <label for="username"><i class="fa-solid fa-id-badge"></i> Healthcare User ID</label>
                 <div class="input-icon-wrap">
-                    <input type="text" id="username" name="username" placeholder="e.g. dr.biswas, dr.phc or dr.bhakta" required autofocus autocomplete="username">
+                    <input type="text" id="username" name="username" placeholder="e.g. dr.biswas, dr.arka or dr.phc" required autofocus autocomplete="username">
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="password"><i class="fa-solid fa-lock"></i> Security Password</label>
                 <div class="input-icon-wrap">
-                    <input type="password" id="password" name="password" placeholder="Enter clinical security password" required autocomplete="current-password">
+                    <input type="password" id="password" name="password" placeholder="Enter security password" required autocomplete="current-password">
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="otp"><i class="fa-solid fa-mobile-screen-button"></i> 6-Digit Authenticator OTP (Dynamic 2FA)</label>
+                <div class="input-icon-wrap">
+                    <input type="text" id="otp" name="otp" class="otp-code-input" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required inputmode="numeric" autocomplete="one-time-code">
+                </div>
+                <small style="display: block; font-size: 0.73rem; color: #64748b; margin-top: 0.25rem;">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Enter the live 6-digit code from Google Authenticator / Microsoft Authenticator on your phone.
+                </small>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block btn-login-submit">
@@ -45,48 +56,48 @@
             </button>
         </form>
 
-        <!-- Fast-Fill Demo Clinical Roles for Intuitive Testing -->
+        <!-- Fast-Fill Authorized Healthcare Personnel (Demo & Clinical Evaluation) -->
         <div class="login-quick-roles">
             <div class="quick-roles-title">
                 <i class="fa-solid fa-user-check"></i> Fast-Fill Authorized Healthcare Credentials:
             </div>
             <div class="quick-role-buttons">
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.biswas', 'matri123');" title="Login as Principal Investigator">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.biswas', 'matri123');" title="Select Dr. D.K. Biswas">
                     <i class="fa-solid fa-user-doctor"></i>
                     <div>
                         <strong>Dr. D.K. Biswas</strong>
                         <small>Principal Investigator (Dy. CMOH)</small>
                     </div>
                 </button>
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.arka', 'matri123');" title="Login as Chief AI Scientist (Co-PI)">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.arka', 'matri123');" title="Select Dr. Arkaprabha Sau">
                     <i class="fa-solid fa-microchip"></i>
                     <div>
                         <strong>Dr. Arkaprabha Sau</strong>
                         <small>Chief AI Scientist &amp; Co-PI</small>
                     </div>
                 </button>
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.bhakta', 'matri123');" title="Login as Dr. Ishita Bhakta (Co-PI)">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.bhakta', 'matri123');" title="Select Dr. Ishita Bhakta">
                     <i class="fa-solid fa-user-doctor"></i>
                     <div>
                         <strong>Dr. Ishita Bhakta</strong>
                         <small>Co-PI &amp; Assistant Professor</small>
                     </div>
                 </button>
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.phc', 'matri123');" title="Login as PHC Doctor">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.phc', 'matri123');" title="Select PHC Doctor">
                     <i class="fa-solid fa-stethoscope"></i>
                     <div>
                         <strong>PHC Doctor</strong>
                         <small>Primary Health Unit (PLHCU)</small>
                     </div>
                 </button>
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.referral', 'matri123');" title="Login as Doctor at Referred Hospital">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('dr.referral', 'matri123');" title="Select Doctor at Referred Hospital">
                     <i class="fa-solid fa-hospital-user"></i>
                     <div>
                         <strong>Doctor at Referred Hospital</strong>
                         <small>Specialist (SDH / DH)</small>
                     </div>
                 </button>
-                <button type="button" class="btn-role-quick" onclick="quickFillLogin('cmoh.dd', 'matri123');" title="Login as District CMOH">
+                <button type="button" class="btn-role-quick" onclick="quickFillLogin('cmoh.dd', 'matri123');" title="Select District CMOH">
                     <i class="fa-solid fa-hospital"></i>
                     <div>
                         <strong>CMOH Dakshin Dinajpur</strong>
@@ -95,20 +106,117 @@
                 </button>
             </div>
         </div>
+
+        <!-- First-Time 2FA Setup Banner (Password-Gated Private QR Enrolment) -->
+        <div class="setup-2fa-banner">
+            <div class="setup-2fa-banner-icon">
+                <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div class="setup-2fa-banner-text">
+                <strong>First-Time Setup: Connect Authenticator App</strong>
+                <span>Link your mobile phone to generate dynamic 6-digit OTPs. Protected by your private password.</span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="open2FASetupModal(document.getElementById('username').value, document.getElementById('password').value);">
+                <i class="fa-solid fa-link"></i> Connect 2FA
+            </button>
+        </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-function quickFillLogin(user, pass) {
-    const uInput = document.getElementById("username");
-    const pInput = document.getElementById("password");
-    if (uInput && pInput) {
-        uInput.value = user;
-        pInput.value = pass;
-        uInput.focus();
-    }
-}
-</script>
+<!-- Modal Dialog: Password-Gated 2FA Setup & Private QR Enrolment -->
+<div id="modal-2fa-setup" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-2fa-setup">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-shield-halved" style="color: var(--blue-600);"></i> 2FA Mobile Authenticator Setup</h3>
+            <button type="button" class="btn-close-modal" onclick="close2FASetupModal()">&times;</button>
+        </div>
+
+        <!-- Security Warning Note -->
+        <div class="security-shield-note">
+            <i class="fa-solid fa-lock"></i>
+            <strong>West Bengal Health Zero-Trust Protocol:</strong>
+            To prevent unauthorized impersonation of healthcare officers, your private 2FA QR code is strictly encrypted and requires password verification.
+        </div>
+
+        <!-- Step 1: Password Verification Form -->
+        <div id="setup_2fa_verify_section">
+            <div id="setup_2fa_error" class="login-error-alert" style="display: none; margin-bottom: 0.85rem;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="setup_2fa_error_text"></span>
+            </div>
+
+            <form onsubmit="submit2FASetup(event)">
+                <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
+                    <label for="setup_2fa_user"><i class="fa-solid fa-id-badge"></i> Healthcare User ID</label>
+                    <select id="setup_2fa_user" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;" required>
+                        <option value="">-- Select Registered Clinical Officer --</option>
+                        <option value="dr.biswas">dr.biswas - Dr. Dilip Kumar Biswas (PI &amp; Dy. CMOH III)</option>
+                        <option value="dr.arka">dr.arka - Dr. Arkaprabha Sau (Co-PI &amp; Chief AI Scientist)</option>
+                        <option value="dr.bhakta">dr.bhakta - Dr. Ishita Bhakta (Co-PI &amp; Asst. Professor)</option>
+                        <option value="dr.phc">dr.phc - PHC Doctor (Primary Health Unit)</option>
+                        <option value="dr.referral">dr.referral - Specialist Doctor (Referred Hospital SDH/DH)</option>
+                        <option value="cmoh.dd">cmoh.dd - CMOH Dakshin Dinajpur (District Executive)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+                    <label for="setup_2fa_pwd"><i class="fa-solid fa-lock"></i> Authorized Security Password</label>
+                    <input type="password" id="setup_2fa_pwd" class="form-control" placeholder="Enter private password to authorize QR code" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;" required>
+                </div>
+
+                <button type="submit" id="btn-setup-2fa-submit" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-key"></i> Verify &amp; Display Private QR Code
+                </button>
+            </form>
+        </div>
+
+        <!-- Step 2: Private QR Code & Step-by-Step Enrolment (Revealed only after successful password check) -->
+        <div id="setup_2fa_qr_section" style="display: none;">
+            <div class="qr-reveal-officer-badge">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="totp_officer_name">Officer Verified</span>
+            </div>
+
+            <div class="auth-totp-guide-card" style="margin-top: 0; padding: 0.75rem;">
+                <div class="totp-card-body">
+                    <div class="totp-qr-wrapper">
+                        <img id="totp_qr_image" src="" alt="Private 2FA QR Code" class="totp-qr-image" width="140" height="140">
+                        <small class="totp-key-text">Personal Secret Key:</small>
+                        <div class="totp-key-row">
+                            <code id="totp_secret_key">--------</code>
+                            <button type="button" class="btn-copy-key" onclick="copyTOTPKey()" title="Copy Key">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="totp-steps-wrapper">
+                        <ol class="totp-steps-list">
+                            <li>
+                                <strong>Install Authenticator App:</strong> Download 
+                                <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener">Google Authenticator (Android)</a> / 
+                                <a href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank" rel="noopener">Google Authenticator (iOS)</a> or <a href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" target="_blank" rel="noopener">Microsoft Authenticator</a>.
+                            </li>
+                            <li>
+                                <strong>Scan Private QR Code:</strong> Open app, tap <strong>"+"</strong> &rarr; select <strong>"Scan a QR code"</strong> (or type the Secret Key).
+                            </li>
+                            <li>
+                                <strong>Offline Dynamic Passcode:</strong> Your phone will immediately generate a 6-digit code refreshing every 30s with zero internet or SMS needed.
+                            </li>
+                            <li>
+                                <strong>Dual-Factor Security:</strong> Each time you log in, enter your password and this live 6-digit OTP.
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="close2FASetupModal()">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="proceedToLoginAfterSetup()">
+                    <i class="fa-solid fa-right-to-bracket"></i> Proceed to Login with 6-Digit OTP
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

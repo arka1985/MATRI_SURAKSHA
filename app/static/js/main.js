@@ -5,6 +5,7 @@
 
 let currentAdmittedStudyId = "NEW-ADMISSION";
 let isMaternalSaved = false;
+let latestAICDSSResult = null;
 
 document.addEventListener("DOMContentLoaded", function () {
     const intakeForm = document.getElementById("cdss-intake-form");
@@ -39,8 +40,9 @@ document.addEventListener("DOMContentLoaded", function () {
         checkSectionCompletion();
     }
 
-    // Initialize doctor re-evaluation time display
+    // Initialize doctor re-evaluation time display & concordance UI
     calculateNextReevalTime();
+    updateConcordanceUI();
 });
 
 function debounce(func, delay) {
@@ -595,6 +597,9 @@ function updateCDSSAndSHAPUI(data) {
 
     if (!alertBox) return;
 
+    latestAICDSSResult = data;
+    syncDoctorAlignmentWithAI(data);
+
     const tLevel = (data.triage_level || "GREEN").toLowerCase();
 
     // Triage Styling
@@ -742,9 +747,17 @@ function renderSHAPWaterfall(shapData) {
 
     const maxVal = Math.max(...contributions.map(c => Math.abs(c.shap_value)), 0.05);
 
-    contributions.slice(0, 7).forEach(c => {
+    // Render all calculated patient parameters
+    contributions.forEach(c => {
         const isRed = c.impact === "INCREASES_RISK";
-        const barWidth = Math.min(100, Math.max(10, (Math.abs(c.shap_value) / maxVal) * 100));
+        // Calculate bar width percentage (up to 46% from 50% center baseline)
+        const barPct = Math.min(46, Math.max(4, (Math.abs(c.shap_value) / maxVal) * 46));
+
+        // Red bars extend rightwards from 50% center baseline
+        // Blue bars extend leftwards from 50% center baseline
+        const barStyle = isRed
+            ? `left: 50%; width: ${barPct}%;`
+            : `right: 50%; width: ${barPct}%;`;
 
         const row = document.createElement("div");
         row.className = "shap-bar-row";
@@ -753,7 +766,9 @@ function renderSHAPWaterfall(shapData) {
                 <strong>${c.feature}</strong> <span class="feat-val">(${c.display_value})</span>
             </span>
             <div class="shap-bar-track">
-                <div class="shap-bar-fill ${isRed ? 'red' : 'blue'}" style="width: ${barWidth}%;"></div>
+                <!-- Center Baseline Reference Line E[f(X)]=0.49 -->
+                <div class="shap-center-ref-line" title="Center Baseline Reference Line: E[f(X)] = 0.49 (0.00 Risk Delta)"></div>
+                <div class="shap-bar-fill ${isRed ? 'red' : 'blue'}" style="${barStyle}"></div>
             </div>
             <span class="shap-val-tag ${isRed ? 'text-red' : 'text-blue'}">
                 ${c.shap_value > 0 ? '+' : ''}${c.shap_value.toFixed(3)}
@@ -1016,6 +1031,124 @@ function toggleDoctorOverride(isOverride) {
     }
 }
 
+function handleDoctorAlignmentChoice(choice) {
+    const agreeRadio = document.getElementById("doc-agree-radio");
+    const overrideRadio = document.getElementById("doc-override-radio");
+    const labelAgree = document.getElementById("label-doc-agree");
+    const labelOverride = document.getElementById("label-doc-override");
+
+    if (choice === "OVERRIDE") {
+        if (overrideRadio) overrideRadio.checked = true;
+        if (agreeRadio) agreeRadio.checked = false;
+        if (labelOverride) labelOverride.classList.add("selected");
+        if (labelAgree) labelAgree.classList.remove("selected");
+        toggleDoctorOverride(true);
+    } else {
+        if (agreeRadio) agreeRadio.checked = true;
+        if (overrideRadio) overrideRadio.checked = false;
+        if (labelAgree) labelAgree.classList.add("selected");
+        if (labelOverride) labelOverride.classList.remove("selected");
+        toggleDoctorOverride(false);
+    }
+
+    updateConcordanceUI();
+}
+
+function updateConcordanceUI() {
+    const banner = document.getElementById("concordance-status-banner");
+    const lead = document.getElementById("concordance-lead");
+    const detail = document.getElementById("concordance-detail");
+    if (!banner || !lead || !detail) return;
+
+    if (!latestAICDSSResult) {
+        banner.className = "concordance-banner neutral";
+        banner.innerHTML = `
+            <i class="fa-solid fa-scale-balanced"></i>
+            <div class="concordance-banner-text">
+                <span id="concordance-lead" class="concordance-lead">AWAITING AI CDSS EVALUATION</span>
+                <strong id="concordance-detail" class="concordance-detail">Execute AI CDSS in Card 2 to evaluate concordance alignment</strong>
+            </div>
+        `;
+        return;
+    }
+
+    const agreeRadio = document.querySelector('input[name="doctor_decision_eval"]:checked');
+    const isAgree = (agreeRadio ? agreeRadio.value : "AGREE") === "AGREE";
+    const tLevel = latestAICDSSResult.triage_level || "GREEN";
+    const riskScore = Math.round(latestAICDSSResult.risk_score || 0);
+
+    if (isAgree) {
+        banner.className = "concordance-banner concordant";
+        banner.innerHTML = `
+            <i class="fa-solid fa-circle-check"></i>
+            <div class="concordance-banner-text">
+                <span id="concordance-lead" class="concordance-lead">CONCORDANT CLINICAL ALIGNMENT</span>
+                <strong id="concordance-detail" class="concordance-detail">Attending Doctor concurs with AI ${tLevel} Triage (${riskScore}/100 Risk Score). Algorithmic recommendation accepted.</strong>
+            </div>
+        `;
+    } else {
+        const cat = document.getElementById("doc_override_category")?.value;
+        banner.className = "concordance-banner override";
+        
+        let reasonStr = "";
+        if (cat) {
+            reasonStr = `Override Reason: <em>${cat}</em>`;
+        } else {
+            reasonStr = `Attending Doctor supersedes AI ${tLevel} recommendation. Mandatory justification required below.`;
+        }
+
+        banner.innerHTML = `
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div class="concordance-banner-text">
+                <span id="concordance-lead" class="concordance-lead">CLINICAL OVERRIDE / DISCORDANCE DETECTED</span>
+                <strong id="concordance-detail" class="concordance-detail">${reasonStr}</strong>
+            </div>
+        `;
+    }
+}
+
+function syncDoctorAlignmentWithAI(data) {
+    if (!data) return;
+    latestAICDSSResult = data;
+
+    const tLevel = (data.triage_level || "GREEN").toUpperCase();
+    const docAgreeDesc = document.getElementById("doc-agree-desc");
+    const docOverrideDesc = document.getElementById("doc-override-desc");
+
+    if (tLevel === "RED") {
+        if (docAgreeDesc) {
+            docAgreeDesc.textContent = "Concur with AI RED Triage (Accept Emergency Specialist Referral Recommendation).";
+        }
+        if (docOverrideDesc) {
+            docOverrideDesc.textContent = "Override AI RED: Clinician determines safe delivery or stabilization at PLHCU.";
+        }
+        selectDisposition("REFER");
+    } else if (tLevel === "YELLOW") {
+        if (docAgreeDesc) {
+            docAgreeDesc.textContent = "Concur with AI YELLOW Triage (Accept Active Bedside Observation & Serial Re-evaluation).";
+        }
+        if (docOverrideDesc) {
+            docOverrideDesc.textContent = "Override AI YELLOW: Clinician decides immediate referral or routine delivery.";
+        }
+        selectDisposition("REEVALUATE");
+    } else {
+        if (docAgreeDesc) {
+            docAgreeDesc.textContent = "Concur with AI GREEN Triage (Accept Physiological Normal Delivery at PLHCU).";
+        }
+        if (docOverrideDesc) {
+            docOverrideDesc.textContent = "Override AI GREEN: Clinician identifies high-risk signs requiring emergency referral.";
+        }
+        selectDisposition("ROUTINE");
+    }
+
+    const overrideRadio = document.getElementById("doc-override-radio");
+    if (!overrideRadio || !overrideRadio.checked) {
+        handleDoctorAlignmentChoice("AGREE");
+    } else {
+        updateConcordanceUI();
+    }
+}
+
 function selectDisposition(val) {
     const radio = document.querySelector(`input[name="doctor_final_disposition"][value="${val}"]`);
     if (radio) {
@@ -1025,31 +1158,127 @@ function selectDisposition(val) {
     if (destWrap) {
         destWrap.style.display = (val === 'REFER') ? "block" : "none";
     }
+
+    // Auto-detect clinical concordance vs override
+    if (latestAICDSSResult) {
+        const isAIRed = (latestAICDSSResult.triage_level || "").toUpperCase() === "RED";
+        const isDocNonRefer = (val === "REEVALUATE" || val === "ROUTINE");
+
+        if (isAIRed && isDocNonRefer) {
+            // Clinician overrides AI Emergency Referral recommendation
+            handleDoctorAlignmentChoice("OVERRIDE");
+            const box = document.getElementById("doctor-contradiction-inputs");
+            if (box) {
+                box.style.display = "block";
+                box.classList.add("highlight-contradiction");
+            }
+            const notes = document.getElementById("doc_override_notes");
+            if (notes && !notes.value.trim()) {
+                notes.placeholder = "AI recommends emergency referral (RED). Record clinical justification for managing/re-evaluating at PLHCU...";
+            }
+        } else if (!isAIRed && val === "REFER") {
+            // Clinician escalates to referral despite AI green/yellow
+            handleDoctorAlignmentChoice("OVERRIDE");
+            const box = document.getElementById("doctor-contradiction-inputs");
+            if (box) {
+                box.style.display = "block";
+                box.classList.add("highlight-contradiction");
+            }
+        } else {
+            // Concordant alignment
+            handleDoctorAlignmentChoice("AGREE");
+            const box = document.getElementById("doctor-contradiction-inputs");
+            if (box) {
+                box.classList.remove("highlight-contradiction");
+            }
+        }
+    }
 }
 
 function handleDispRadio() {
     const radio = document.querySelector('input[name="doctor_final_disposition"]:checked');
-    const destWrap = document.getElementById("option-b-dest-wrap");
-    if (destWrap && radio) {
-        destWrap.style.display = (radio.value === 'REFER') ? "block" : "none";
+    if (radio) {
+        selectDisposition(radio.value);
     }
 }
 
 async function saveDoctorClinicalOrder() {
+    if (!isMaternalSaved || !currentAdmittedStudyId || currentAdmittedStudyId === "NEW-ADMISSION") {
+        showToast("Please save Maternal Details (Step 1) before recording the doctor's final order.", "warning");
+        const btnSave = document.getElementById("btn-save-maternal");
+        if (btnSave) {
+            btnSave.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
     const agreeRadio = document.querySelector('input[name="doctor_decision_eval"]:checked');
     const dispRadio = document.querySelector('input[name="doctor_final_disposition"]:checked');
 
-    const decision = agreeRadio ? agreeRadio.value : "AGREE";
+    let decision = agreeRadio ? agreeRadio.value : "AGREE";
     const action = dispRadio ? dispRadio.value : "REEVALUATE";
 
-    const reasonCat = document.getElementById("doc_override_category")?.value || "";
-    const reasonNotes = document.getElementById("doc_override_notes")?.value || "";
-    const overrideReason = decision === "OVERRIDE" ? (reasonCat + ": " + reasonNotes) : "";
+    // Auto-detect override when AI is RED and action is non-referral
+    if (latestAICDSSResult && (latestAICDSSResult.triage_level || "").toUpperCase() === "RED" && action !== "REFER") {
+        decision = "OVERRIDE";
+        handleDoctorAlignmentChoice("OVERRIDE");
+    }
+
+    const catSelect = document.getElementById("doc_override_category");
+    const notesInput = document.getElementById("doc_override_notes");
+    const reasonCat = catSelect?.value || "";
+    const reasonNotes = notesInput?.value.trim() || "";
+
+    if (decision === "OVERRIDE") {
+        // Ensure the contradiction input box is forcefully opened and highlighted
+        const box = document.getElementById("doctor-contradiction-inputs");
+        if (box) {
+            box.style.display = "block";
+            box.classList.add("highlight-contradiction");
+        }
+
+        if (!reasonCat) {
+            showToast("AI recommends emergency transfer (RED). Please select the primary clinical reason for retaining/re-evaluating at PLHCU in the box above.", "warning");
+            if (catSelect) {
+                catSelect.focus();
+                catSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+        if (!reasonNotes) {
+            showToast("Please record your mandatory clinical justification notes in the comment box above before confirming.", "warning");
+            if (notesInput) {
+                notesInput.style.border = "2px solid #ef4444";
+                notesInput.focus();
+                notesInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+    }
+
+    const overrideReason = decision === "OVERRIDE" ? (reasonCat + (reasonNotes ? ": " + reasonNotes : "")) : "";
 
     const hoursSel = document.getElementById("reeval-hours-select");
     const customHours = document.getElementById("reeval-custom-hours");
     let reevalHours = hoursSel ? (hoursSel.value === "custom" ? (parseFloat(customHours?.value) || 1) : parseFloat(hoursSel.value)) : 1.0;
     const nextReevalTime = document.getElementById("next-reeval-time-display")?.textContent || "";
+
+    let bDest = "";
+    if (action === "REFER") {
+        const bDestSel = document.getElementById("option-b-dest-select")?.value;
+        const bDestCust = document.getElementById("option-b-dest-custom")?.value.trim() || "";
+        bDest = (bDestSel && bDestSel !== "__ADD_NEW__") ? bDestSel : (bDestCust || "Designated Referral Hospital");
+        // Dispatch referral in background
+        fetch("/api/patient/refer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                study_id: currentAdmittedStudyId,
+                referral_facility: bDest,
+                reason: decision === "OVERRIDE" ? `Doctor Override Referral: ${reasonCat}` : "Doctor Ordered Referral"
+            })
+        }).catch(err => console.error("Error auto-referring:", err));
+    }
 
     const payload = {
         study_id: currentAdmittedStudyId,
@@ -1060,18 +1289,6 @@ async function saveDoctorClinicalOrder() {
         next_reeval_time: nextReevalTime
     };
 
-    if (action === "REFER") {
-        const bDestSel = document.getElementById("option-b-dest-select")?.value;
-        const bDestCust = document.getElementById("option-b-dest-custom")?.value.trim() || "";
-        const bDest = (bDestSel && bDestSel !== "__ADD_NEW__") ? bDestSel : (bDestCust || "Designated Referral Hospital");
-        // Dispatch referral in background
-        fetch("/api/patient/refer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ study_id: currentAdmittedStudyId, referral_facility: bDest, reason: "Doctor Ordered Referral" })
-        }).catch(err => console.error("Error auto-referring:", err));
-    }
-
     try {
         const resp = await fetch("/api/doctor/evaluation", {
             method: "POST",
@@ -1081,6 +1298,53 @@ async function saveDoctorClinicalOrder() {
         const res = await resp.json();
         if (res.success) {
             showToast(`Final Decision taken by attending doctor recorded for #${currentAdmittedStudyId}!`, "success");
+
+            // Display Confirmed Order Card visually
+            const orderCard = document.getElementById("doctor-recorded-order-card");
+            const orderTitle = document.getElementById("recorded-order-title");
+            const orderTime = document.getElementById("order-recorded-time");
+            const orderAction = document.getElementById("order-recorded-action");
+            const overrideInfo = document.getElementById("order-recorded-override-info");
+            const overrideReasonText = document.getElementById("recorded-override-reason-text");
+            const overrideNotesWrap = document.getElementById("recorded-override-notes-wrap");
+            const overrideNotesText = document.getElementById("recorded-override-notes-text");
+
+            if (orderCard) {
+                orderCard.style.display = "block";
+                const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (orderTime) orderTime.textContent = nowTime;
+
+                if (orderTitle) {
+                    orderTitle.textContent = decision === "OVERRIDE"
+                        ? `Doctor Clinical Override Enforced (#${currentAdmittedStudyId})`
+                        : `Doctor Concordant Order Recorded (#${currentAdmittedStudyId})`;
+                }
+
+                if (orderAction) {
+                    if (action === "REFER") {
+                        orderAction.innerHTML = `<i class="fa-solid fa-truck-medical text-red"></i> <strong>REFERRAL ORDERED:</strong> Immediate transfer to <u>${bDest}</u>`;
+                    } else if (action === "REEVALUATE") {
+                        orderAction.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-yellow"></i> <strong>REEVALUATION SCHEDULED:</strong> Active observation; re-evaluate in ${reevalHours} hr (at ${nextReevalTime})`;
+                    } else {
+                        orderAction.innerHTML = `<i class="fa-solid fa-baby text-green"></i> <strong>PLHCU DELIVERY:</strong> Normal delivery care under active AMTSL protocol`;
+                    }
+                }
+
+                if (decision === "OVERRIDE") {
+                    orderCard.className = "doctor-recorded-order override";
+                    if (overrideInfo) overrideInfo.style.display = "flex";
+                    if (overrideReasonText) overrideReasonText.textContent = reasonCat;
+                    if (overrideNotesWrap) {
+                        overrideNotesWrap.style.display = reasonNotes ? "block" : "none";
+                        if (overrideNotesText) overrideNotesText.textContent = reasonNotes;
+                    }
+                } else {
+                    orderCard.className = "doctor-recorded-order";
+                    if (overrideInfo) overrideInfo.style.display = "none";
+                }
+
+                orderCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         } else {
             showToast("Error saving doctor order: " + (res.error || "Unknown"), "error");
         }
@@ -1100,5 +1364,209 @@ function toggleMISRegistry() {
     } else {
         body.style.display = "none";
         if (icon) icon.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+    }
+}
+
+/**
+ * Purge Test Patient Record
+ * Restricted exclusively to Dr. Arkaprabha Sau (Chief AI Scientist & Co-PI)
+ */
+async function deleteTestPatient(studyId, patientName) {
+    if (!confirm(`Are you sure you want to permanently delete test record for patient #${studyId} (${patientName})?\n\nThis will purge all associated assessments, timeline entries, and referrals. This action is restricted to Dr. Arkaprabha Sau (Chief AI Scientist).`)) {
+        return;
+    }
+
+    try {
+        const resp = await fetch("/api/patient/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ study_id: studyId })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            showToast(`Test patient #${studyId} purged successfully.`, "success");
+            const row = document.getElementById(`patient-row-${studyId}`);
+            if (row) {
+                row.style.transition = "all 0.4s ease";
+                row.style.opacity = "0";
+                row.style.background = "#fee2e2";
+                setTimeout(() => row.remove(), 400);
+            } else {
+                setTimeout(() => window.location.reload(), 800);
+            }
+        } else {
+            showToast("Delete operation failed: " + (res.error || "Permission Denied"), "error");
+        }
+    } catch (e) {
+        showToast("Error communicating with server: " + e.message, "error");
+    }
+}
+
+// -------------------------------------------------------------
+// Two-Factor Authentication (2FA) & Password-Gated Setup Helpers
+// -------------------------------------------------------------
+function open2FASetupModal(presetUser, presetPass) {
+    const modal = document.getElementById("modal-2fa-setup");
+    if (!modal) return;
+
+    const userInput = document.getElementById("setup_2fa_user");
+    const pwdInput = document.getElementById("setup_2fa_pwd");
+    const errAlert = document.getElementById("setup_2fa_error");
+    const verifySec = document.getElementById("setup_2fa_verify_section");
+    const qrSec = document.getElementById("setup_2fa_qr_section");
+
+    if (errAlert) errAlert.style.display = "none";
+    if (verifySec) verifySec.style.display = "block";
+    if (qrSec) qrSec.style.display = "none";
+
+    if (userInput && presetUser) userInput.value = presetUser;
+    if (pwdInput && presetPass) pwdInput.value = presetPass;
+
+    modal.style.display = "flex";
+    if (userInput && !userInput.value) {
+        userInput.focus();
+    } else if (pwdInput && !pwdInput.value) {
+        pwdInput.focus();
+    }
+}
+
+function close2FASetupModal() {
+    const modal = document.getElementById("modal-2fa-setup");
+    if (modal) modal.style.display = "none";
+}
+
+async function submit2FASetup(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const userInput = document.getElementById("setup_2fa_user");
+    const pwdInput = document.getElementById("setup_2fa_pwd");
+    const errAlert = document.getElementById("setup_2fa_error");
+    const errText = document.getElementById("setup_2fa_error_text");
+    const btnSubmit = document.getElementById("btn-setup-2fa-submit");
+
+    const username = userInput ? userInput.value.trim() : "";
+    const password = pwdInput ? pwdInput.value.trim() : "";
+
+    if (!username || !password) {
+        if (errAlert && errText) {
+            errText.textContent = "Please enter both your User ID and Security Password.";
+            errAlert.style.display = "flex";
+        }
+        return;
+    }
+
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Credentials...';
+    }
+    if (errAlert) errAlert.style.display = "none";
+
+    try {
+        const resp = await fetch("/api/auth/setup-2fa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        const res = await resp.json();
+
+        if (resp.ok && res.success) {
+            // Render QR code & verified identity
+            const verifySec = document.getElementById("setup_2fa_verify_section");
+            const qrSec = document.getElementById("setup_2fa_qr_section");
+            const officerName = document.getElementById("totp_officer_name");
+            const qrImg = document.getElementById("totp_qr_image");
+            const keyText = document.getElementById("totp_secret_key");
+
+            if (officerName) officerName.textContent = `${res.full_name} (${res.role})`;
+            if (qrImg) qrImg.src = res.qr_image_data;
+            if (keyText) keyText.textContent = res.totp_secret;
+
+            if (verifySec) verifySec.style.display = "none";
+            if (qrSec) qrSec.style.display = "block";
+            showToast("Credentials verified. Private 2FA QR code generated!", "success");
+        } else {
+            if (errAlert && errText) {
+                errText.textContent = res.error || "Authentication failed. Invalid password.";
+                errAlert.style.display = "flex";
+            }
+            showToast(res.error || "Authentication failed.", "error");
+        }
+    } catch (err) {
+        if (errAlert && errText) {
+            errText.textContent = "Server communication failure: " + err.message;
+            errAlert.style.display = "flex";
+        }
+        showToast("Server error: " + err.message, "error");
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-key"></i> Verify &amp; Display Private QR Code';
+        }
+    }
+}
+
+function copyTOTPKey() {
+    const keyText = document.getElementById("totp_secret_key");
+    if (!keyText) return;
+    const key = keyText.textContent.trim();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).then(() => {
+            showToast("2FA Secret Key copied to clipboard!", "success");
+        }).catch(() => fallbackCopy(key));
+    } else {
+        fallbackCopy(key);
+    }
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("2FA Secret Key copied to clipboard!", "success");
+}
+
+function proceedToLoginAfterSetup() {
+    close2FASetupModal();
+    const userInput = document.getElementById("setup_2fa_user");
+    const mainUser = document.getElementById("username") || document.getElementById("plhcu_login_user");
+    const mainOtp = document.getElementById("otp") || document.getElementById("plhcu_login_otp");
+    if (mainUser && userInput && userInput.value) {
+        mainUser.value = userInput.value;
+    }
+    if (mainOtp) {
+        mainOtp.focus();
+        showToast("Enter the 6-digit OTP from your Authenticator app to log in.", "info");
+    }
+}
+
+function quickFillLogin(user, pass) {
+    const uInput = document.getElementById("username");
+    const pInput = document.getElementById("password");
+    const oInput = document.getElementById("otp");
+    if (uInput && pInput) {
+        uInput.value = user;
+        pInput.value = pass;
+        if (oInput) {
+            oInput.value = "";
+            oInput.focus();
+        }
+        showToast(`Selected: ${user}. Enter 6-digit dynamic OTP to log in.`, "info");
+    }
+}
+
+function fillPlhcuLogin(user, pass) {
+    const uInput = document.getElementById("plhcu_login_user");
+    const pInput = document.getElementById("plhcu_login_pwd");
+    const oInput = document.getElementById("plhcu_login_otp");
+    if (uInput && pInput) {
+        uInput.value = user;
+        pInput.value = pass;
+        if (oInput) {
+            oInput.value = "";
+            oInput.focus();
+        }
+        showToast(`Selected: ${user}. Enter 6-digit dynamic OTP to log in.`, "info");
     }
 }

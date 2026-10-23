@@ -312,9 +312,9 @@ def run_triage_evaluation(
 
     # 4. Generate SHAP TreeExplainer Waterfall Plot (Card 4)
     shap_data = result.get("shap", {})
-    contribs = shap_data.get("contributions", [])[:8]
+    contribs = shap_data.get("shap_contributions") or shap_data.get("contributions", [])
 
-    fig, ax = plt.subplots(figsize=(7, 4.2), dpi=100)
+    fig, ax = plt.subplots(figsize=(7.5, max(4.2, min(10.0, len(contribs) * 0.35))), dpi=100)
     fig.patch.set_facecolor('#ffffff')
     ax.set_facecolor('#fffaf5')
 
@@ -656,11 +656,11 @@ with gr.Blocks(title="MatriSuraksha - 4-Card 2x2 CDSS") as demo:
                 gr.Markdown("**2. Doctor's Final Management Order & Care Plan:**")
                 disposition_order = gr.Radio(
                     choices=[
+                        ("Proceed with Normal Delivery at PLHCU", "ROUTINE"),
                         ("Re-evaluate after Set Hours", "REEVALUATE"),
                         ("Decision to Refer to Higher Centre (SDH / DH)", "REFER"),
-                        ("Proceed with Normal Delivery at PLHCU", "ROUTINE")
                     ],
-                    value="REEVALUATE",
+                    value="ROUTINE",
                     label="Clinical Disposition Choice"
                 )
 
@@ -685,18 +685,25 @@ with gr.Blocks(title="MatriSuraksha - 4-Card 2x2 CDSS") as demo:
                 )
 
         # ---------------------------------------------------------
-        # ROW 2, COL 2: CARD 4 - SHAP Explainable AI Waterfall (TreeExplainer)
+        # ROW 2, COL 2: CARD 4 - Explainable AI though SHAP (TreeExplainer)
         # ---------------------------------------------------------
         with gr.Column(scale=1):
             gr.HTML("""
             <div class="card-header-bar">
-                <span>🧠 Card 4: SHAP Explainable AI Waterfall (TreeExplainer)</span>
+                <span>🧠 Card 4: Explainable AI though SHAP</span>
                 <span style="background: #ffedd5; color: #c2410c; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Feature Attribution (ϕᵢ)</span>
             </div>
             """)
             with gr.Group(elem_classes="clinical-card-container"):
                 gr.Markdown("*Exact Shapley values (ϕᵢ) for individual patient parameters relative to Base Expected Value E[f(X)] = 0.493:*")
-                shap_plot_output = gr.Plot(value=create_empty_shap_figure(), label="SHAP Feature Attribution Waterfall")
+                shap_plot_output = gr.Plot(value=create_empty_shap_figure(), label="Explainable AI though SHAP")
+                gr.Markdown("""
+### 💡 How to Understand This Chart:
+This chart explains **why** the AI made its clinical recommendation:
+- 🔴 **Red Bars (Danger Signs):** Maternal or fetal parameters (such as elevated blood pressure, severe anemia, or abnormal fetal heart rate) that extend to the right of the center baseline and **push the patient towards referral** to a higher hospital (SDH/DH). The longer the red bar, the stronger the clinical warning.
+- 🟠/🔵 **Orange/Blue Bars (Reassuring Signs):** Normal physiological findings (e.g. normal blood pressure, normal fetal heart rate ~140 bpm, clear amniotic fluid) that extend to the left of the center baseline and **pull the risk down**, supporting safe labor progression and delivery at the local primary health center (PLHCU).
+- ⚖️ **Center Baseline Reference Line:** The vertical reference line at zero represents the average baseline probability E[f(X)]. The AI balances these opposing forces to assign the final Green, Yellow, or Red triage decision.
+""")
 
     # Wire Real-Time Completion Checking across inputs
     key_inputs = [
